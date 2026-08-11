@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "CrmData": {
+      "title": "CRM Store",
+      "description": "Entire CRM database containing deals, clients, visits, usuarios, and settings",
+      "type": "object",
+      "properties": {
+        "comerciais": { "type": "array" },
+        "clients": { "type": "array" },
+        "visits": { "type": "array" },
+        "deals": { "type": "array" },
+        "guidelines": { "type": "array" },
+        "notifications": { "type": "array" },
+        "activityFeed": { "type": "array" },
+        "arquivos": { "type": "array" },
+        "crmName": { "type": "string" },
+        "telSede": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/crm_store/{docId}": {
+      "schema": "CrmData",
+      "description": "CRM global state document"
+    }
+  }
+}

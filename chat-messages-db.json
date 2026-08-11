@@ -1,0 +1,45 @@
+[
+  {
+    "id": "m_init_1",
+    "channelId": "c_geral",
+    "senderId": "u_admin",
+    "senderName": "Administração GPA",
+    "text": "Bem-vindo ao Chat Oficial do CRM GPA Angola! Utilize este canal para sincronizar propostas, chamadas de voz/vídeo em tempo real e agendar visitas com a equipa.",
+    "timestamp": "08:30",
+    "createdAt": 1786386926879,
+    "reactions": {
+      "🚀": [
+        "u_admin"
+      ]
+    }
+  },
+  {
+    "id": "m_1786390816228_4bo3",
+    "channelId": "dm_u11_u12",
+    "senderId": "u11",
+    "senderName": "Admin1",
+    "senderAvatar": "",
+    "text": "ola",
+    "timestamp": "20:40",
+    "createdAt": 1786390816228
+  },
+  {
+    "id": "m_1786390849340_8dfx",
+    "channelId": "dm_u11_u12",
+    "senderId": "u12",
+    "senderName": "Admin2",
+    "senderAvatar": "",
+    "text": "como estas ?",
+    "timestamp": "20:40",
+    "createdAt": 1786390849340
+  },
+  {
+    "id": "m_sys_1786390882804",
+    "channelId": "dm_u11_u12",
+    "senderId": "system",
+    "senderName": "Sistema",
+    "text": "📞 Chamada de vídeo terminada (00:03)",
+    "timestamp": "20:41",
+    "isSystem": true
+  }
+]

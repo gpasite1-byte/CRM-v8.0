@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <!-- Clean Pure White Background -->
+  <rect width="800" height="450" fill="#FFFFFF"/>
+
+  <defs>
+    <!-- Hexagon Outer Shading Gradient -->
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b4b80" />
+      <stop offset="50%" stop-color="#2d3a6d" />
+      <stop offset="100%" stop-color="#1b2348" />
+    </linearGradient>
+
+    <!-- Top Left Facet -->
+    <linearGradient id="topFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5a6cb0" />
+      <stop offset="100%" stop-color="#3b4b80" />
+    </linearGradient>
+
+    <!-- Center Orange 3D Sphere Segments -->
+    <linearGradient id="circleTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8b032" />
+      <stop offset="100%" stop-color="#e6811b" />
+    </linearGradient>
+    <linearGradient id="circleRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#dd631e" />
+      <stop offset="100%" stop-color="#b83f12" />
+    </linearGradient>
+    <linearGradient id="circleLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e27c22" />
+      <stop offset="100%" stop-color="#c44d15" />
+    </linearGradient>
+  </defs>
+
+  <!-- Group centered in viewBox -->
+  <g transform="translate(60, 25)">
+    <!-- Hexagon Symbol -->
+    <g transform="translate(180, 200)">
+      <!-- Main Outer Hexagon -->
+      <polygon points="0,-140 120,-70 120,70 0,140 -120,70 -120,-70" fill="url(#hexGrad)" />
+      <!-- Facet Light Shading -->
+      <polygon points="0,-140 120,-70 0,0 -120,-70" fill="url(#topFace)" opacity="0.4" />
+
+      <!-- Inner White Rounded Hexagon -->
+      <polygon points="0,-90 78,-45 78,45 0,90 -78,45 -78,-45" fill="#FFFFFF" />
+
+      <!-- Center 3D Orange Sphere (3 segments) -->
+      <g>
+        <!-- Top Segment -->
+        <path d="M0,0 L0,-40 A40,40 0 0,1 34.6,20 Z" fill="url(#circleTop)" />
+        <!-- Right Segment -->
+        <path d="M0,0 L34.6,20 A40,40 0 0,1 -34.6,20 Z" fill="url(#circleRight)" />
+        <!-- Left Segment -->
+        <path d="M0,0 L-34.6,20 A40,40 0 0,1 0,-40 Z" fill="url(#circleLeft)" />
+        <!-- Separator Lines -->
+        <line x1="0" y1="0" x2="0" y2="-40" stroke="#FFFFFF" stroke-width="2.5" opacity="0.9" />
+        <line x1="0" y1="0" x2="34.6" y2="20" stroke="#FFFFFF" stroke-width="2.5" opacity="0.9" />
+        <line x1="0" y1="0" x2="-34.6" y2="20" stroke="#FFFFFF" stroke-width="2.5" opacity="0.9" />
+      </g>
+    </g>
+
+    <!-- Typography "GPA ANGOLA" with generous margin and clear alignment -->
+    <g transform="translate(340, 160)">
+      <text x="0" y="50" fill="#2d3a6d" font-family="'Inter', 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="110" letter-spacing="-1">GPA</text>
+      <text x="5" y="115" fill="#2d3a6d" font-family="'Inter', 'Segoe UI', Arial, sans-serif" font-weight="800" font-size="32" letter-spacing="14">ANGOLA</text>
+    </g>
+  </g>
+</svg>

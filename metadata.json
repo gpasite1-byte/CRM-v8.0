@@ -1,0 +1,6 @@
+{
+  "name": "GPA ANGOLA CRM v8.0 PRO",
+  "description": "Sistema de Gestão Comercial e Inteligência Analítica de Alta Performance para a GPA Angola v8.0 PRO, com pipeline CRM Kanban avançado, Helena IA 8.0, metas e comissões, integração ERP e auditoria ao vivo.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

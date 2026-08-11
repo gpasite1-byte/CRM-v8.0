@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Cinzel:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Montserrat:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;600;700;800&family=Oswald:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Raleway:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700;900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Work+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --font-serif: "Playfair Display", "Merriweather", "Lora", serif;
+}
+
+/* Explicit Utility Font Classes */
+.font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
+.font-inter { font-family: 'Inter', sans-serif !important; }
+.font-poppins { font-family: 'Poppins', sans-serif !important; }
+.font-montserrat { font-family: 'Montserrat', sans-serif !important; }
+.font-outfit { font-family: 'Outfit', sans-serif !important; }
+.font-roboto { font-family: 'Roboto', sans-serif !important; }
+.font-open-sans { font-family: 'Open Sans', sans-serif !important; }
+.font-raleway { font-family: 'Raleway', sans-serif !important; }
+.font-work-sans { font-family: 'Work Sans', sans-serif !important; }
+.font-manrope { font-family: 'Manrope', sans-serif !important; }
+.font-lexend { font-family: 'Lexend', sans-serif !important; }
+
+/* Serif & Elegantes */
+.font-playfair { font-family: 'Playfair Display', serif !important; }
+.font-merriweather { font-family: 'Merriweather', serif !important; }
+.font-lora { font-family: 'Lora', serif !important; }
+.font-cinzel { font-family: 'Cinzel', serif !important; }
+.font-garamond { font-family: 'EB Garamond', serif !important; }
+.font-cormorant { font-family: 'Cormorant Garamond', serif !important; }
+
+/* Display & Impacto */
+.font-bebas { font-family: 'Bebas Neue', sans-serif !important; }
+.font-oswald { font-family: 'Oswald', sans-serif !important; }
+.font-space { font-family: 'Space Grotesk', sans-serif !important; }
+.font-syne { font-family: 'Syne', sans-serif !important; }
+.font-archivo { font-family: 'Archivo Black', sans-serif !important; }
+
+/* Monospace / Código */
+.font-jetbrains { font-family: 'JetBrains Mono', monospace !important; }
+.font-fira { font-family: 'Fira Code', monospace !important; }
+.font-spacemono { font-family: 'Space Mono', monospace !important; }
+
+ :root {
+  color-scheme: dark;
+  --app-bg: #070b14;
+  --app-surface: #0f172a;
+  --app-surface-2: #111c34;
+  --app-card: rgba(15, 23, 42, 0.92);
+  --app-text: #f8fafc;
+  --app-muted: #94a3b8;
+  --app-border: rgba(34, 211, 238, 0.16);
+  --app-accent: #22d3ee;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-2: #eef4ff;
+  --app-card: rgba(255, 255, 255, 0.94);
+  --app-text: #0f172a;
+  --app-muted: #475569;
+  --app-border: rgba(14, 116, 144, 0.18);
+  --app-accent: #0f766e;
+}
+
+html, body, #root {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
+
+body {
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.theme-surface {
+  background: var(--app-surface);
+  color: var(--app-text);
+  border-color: var(--app-border);
+}
+
+.theme-card {
+  background: var(--app-card);
+  color: var(--app-text);
+  border-color: var(--app-border);
+}
+
+.theme-muted {
+  color: var(--app-muted);
+}
+
+/* Custom Scrollbars for Modern Executive UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.65);
+}
+
+@keyframes animatedGlowMesh {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Static ambient glow background elements */
+.bg-animated-mesh {
+  background: radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.12), transparent 45%),
+              radial-gradient(circle at 85% 75%, rgba(99, 102, 241, 0.12), transparent 45%),
+              linear-gradient(135deg, #030712 0%, #080f21 50%, #030712 100%);
+}
+
+.bg-tech-grid {
+  background-image: radial-gradient(rgba(56, 189, 248, 0.15) 1.2px, transparent 0);
+  background-size: 28px 28px;
+}
+
+@keyframes chartGrowY {
+  from {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
+@keyframes chartDashDraw {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes chartPulseSlow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scale(1.02);
+  }
+}
+
+.animate-chart-grow {
+  animation: chartGrowY 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-chart-pulse {
+  animation: chartPulseSlow 3s ease-in-out infinite;
+}
+
