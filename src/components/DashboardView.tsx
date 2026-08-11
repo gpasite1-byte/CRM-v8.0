@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import AppLogoImage from './AppLogoImage';
 import { Usuario, Deal, Cliente, Guideline } from '../types';
+import bgVideo from '../../videos/Prompt_Direto_e_Suave_Reco.mp4';
 import { baseDuasSemanasData } from '../data/baseDuasSemanasData';
 import { 
   PeriodType, 
@@ -256,8 +257,8 @@ export default function DashboardView({
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-60 scale-105 filter saturate-150 contrast-110 pointer-events-none transition-all duration-700 group-hover:scale-110 group-hover:opacity-75"
-          src="/videos/Prompt_Direto_e_Suave_Reco.mp4"
+          className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-100 group-hover:scale-105 transition-transform duration-1000"
+          src={bgVideo}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/70 to-blue-950/50 backdrop-blur-[1px]" />
 

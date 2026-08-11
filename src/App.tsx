@@ -11,6 +11,7 @@ import {
 } from './data';
 import { Camera } from 'lucide-react';
 import { processInvoiceAutomation } from './lib/invoiceAutomation';
+import bgVideo from '../videos/Prompt_Direto_e_Suave_Reco.mp4';
 
 function getCurrentMonthLabel(): string {
   const now = new Date();
@@ -2348,7 +2349,7 @@ export default function App() {
           muted 
           playsInline 
           className="w-full h-full object-cover opacity-15 mix-blend-screen"
-          src="/videos/Prompt_Direto_e_Suave_Reco.mp4"
+          src={bgVideo}
         />
       </div>
       

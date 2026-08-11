@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AppLogoImage from './AppLogoImage';
 import { Usuario } from '../types';
 import { Shield, Mail, Phone, Lock, Key, LogIn, ArrowLeft, Headphones } from 'lucide-react';
+import bgVideo from '../../videos/Prompt_Direto_e_Suave_Reco.mp4';
 
 interface LoginOverlayProps {
   comerciais: Usuario[];
@@ -167,7 +168,7 @@ export default function LoginOverlay({ comerciais, onLoginSuccess, addNotificati
     <div id="loginOverlay" className="fixed inset-0 bg-[#060a12] z-[99999] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Animated Video Layer */}
       <video
-        src="/videos/Prompt_Direto_e_Suave_Reco.mp4"
+        src={bgVideo}
         autoPlay
         loop
         muted
