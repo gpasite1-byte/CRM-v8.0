@@ -2340,6 +2340,18 @@ export default function App() {
       {/* Structural Tech Grid Background */}
       <div className="absolute inset-0 bg-tech-grid opacity-15 pointer-events-none z-0"></div>
       
+      {/* Global Animated Video Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          className="w-full h-full object-cover opacity-15 mix-blend-screen"
+          src="/videos/Prompt_Direto_e_Suave_Reco.mp4"
+        />
+      </div>
+      
       {/* Floating Chat Message Toast Banner */}
       {chatToast && (
         <div className="fixed top-4 right-4 z-[9999] bg-[#001f3f] text-white p-3.5 rounded-2xl shadow-2xl border border-blue-400/30 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-200 max-w-sm">
