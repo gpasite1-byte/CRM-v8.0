@@ -147,7 +147,7 @@ export default function ListasView({
   ];
 
   return (
-    <div className="w-full space-y-6 font-serif my-2 text-gray-900">
+    <div className="w-full space-y-6 font-sans my-2 text-slate-900 dark:text-slate-100">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (

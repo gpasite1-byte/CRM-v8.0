@@ -2409,7 +2409,7 @@ export default function App() {
       />
 
       {/* Main viewport area */}
-      <div className={`flex-grow flex flex-col overflow-hidden relative z-10 ${themeMode === 'dark' ? 'bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),linear-gradient(135deg,rgba(2,6,23,0.96),rgba(10,16,35,0.92))]' : 'bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.10),transparent_25%),linear-gradient(135deg,#f8fafc_0%,#eef4ff_60%,#f8fafc_100%)]'}`}>
+      <div className={`flex-grow flex flex-col overflow-hidden relative z-10 ${themeMode === 'dark' ? 'bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),linear-gradient(135deg,rgba(2,6,23,0.96),rgba(10,16,35,0.92))] text-slate-100' : 'bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.10),transparent_25%),linear-gradient(135deg,#f8fafc_0%,#eef4ff_60%,#f8fafc_100%)] text-slate-900'}`}>
         
         {/* Structural Topbar */}
         <TopBar

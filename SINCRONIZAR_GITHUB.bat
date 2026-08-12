@@ -6,7 +6,9 @@ echo    GPA ANGOLA CRM v8.0 PRO - SINCRONIZADOR DE REPOSITÓRIO GITHUB
 echo ====================================================================
 echo 0. Sincronizando pasta de videos estaticos...
 if not exist "public\videos" mkdir "public\videos"
+if not exist "src\assets\videos" mkdir "src\assets\videos"
 copy /y "videos\*" "public\videos\" >nul 2>&1
+copy /y "videos\*" "src\assets\videos\" >nul 2>&1
 
 echo.
 echo 1. A inicializar e adicionar ficheiros ao Git local...

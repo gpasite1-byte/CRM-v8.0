@@ -359,7 +359,7 @@ export default function BaseDuasSemanasView({ deals = [], onAddDeal, loggedUser,
   };
 
   return (
-    <div className="w-full space-y-4 font-serif text-gray-900 my-2">
+    <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 my-2">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (

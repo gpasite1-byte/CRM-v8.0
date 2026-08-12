@@ -115,7 +115,7 @@ export default function CrmKanbanView({
   const maxStageVal = Math.max(...stageData.map(s => s.val), 1);
 
   return (
-    <div className="space-y-6 h-full flex flex-col font-sans">
+    <div className="space-y-6 h-full flex flex-col font-sans text-slate-900 dark:text-slate-100">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (
@@ -136,7 +136,7 @@ export default function CrmKanbanView({
       )}
 
       {/* Top Main Header */}
-      <div className="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-xs border border-gray-100">
+      <div className="flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-slate-900/90 p-4 rounded-2xl shadow-xs border border-gray-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
             <TrendingUp size={20} className="text-[#003366]" />

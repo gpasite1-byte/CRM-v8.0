@@ -176,7 +176,7 @@ export default function MetasPerformanceView({
   };
 
   return (
-    <div className="space-y-6 w-full my-2 font-serif">
+    <div className="space-y-6 w-full my-2 font-sans text-slate-900 dark:text-slate-100">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (

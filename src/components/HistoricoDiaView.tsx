@@ -204,24 +204,24 @@ export default function HistoricoDiaView({
   // If user is not Admin, show explicit restricted access card
   if (!isAdmin) {
     return (
-      <div className="p-6 md:p-10 max-w-4xl mx-auto font-sans">
-        <div className="bg-white rounded-2xl border border-rose-200 shadow-xl p-8 text-center space-y-5 animate-fade-in">
-          <div className="w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+      <div className="p-4 md:p-8 max-w-4xl mx-auto font-sans text-slate-900 dark:text-slate-100">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-900/50 shadow-2xl p-8 text-center space-y-5 animate-fade-in">
+          <div className="w-20 h-20 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
             <Lock size={40} />
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               Acesso Restrito: Histórico do Dia
             </h2>
-            <p className="text-sm text-gray-600 max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-300 max-w-lg mx-auto leading-relaxed">
               O módulo <strong>Histórico do Dia (Auditoria Geral)</strong> é de acesso exclusivo para os <strong>Administradores do CRM GPA Angola</strong>.
             </p>
           </div>
 
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 font-medium space-y-1.5 max-w-md mx-auto">
-            <p className="font-bold flex items-center gap-1.5 text-amber-950">
-              <ShieldCheck size={16} className="text-amber-600" />
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-2xl text-left text-xs text-amber-900 dark:text-amber-200 font-medium space-y-1.5 max-w-md mx-auto">
+            <p className="font-bold flex items-center gap-1.5 text-amber-950 dark:text-amber-100">
+              <ShieldCheck size={16} className="text-amber-600 dark:text-amber-400" />
               Política de Segurança & Privacidade:
             </p>
             <p>
@@ -230,7 +230,7 @@ export default function HistoricoDiaView({
           </div>
 
           <div className="pt-2">
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 bg-gray-100 px-4 py-2 rounded-full">
+            <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700">
               Utilizador Atual: <strong>{loggedUser?.nome || 'Comercial'}</strong> ({loggedUser?.perfil || 'Comercial'})
             </span>
           </div>
@@ -240,7 +240,7 @@ export default function HistoricoDiaView({
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-6 font-sans max-w-7xl mx-auto">
+    <div className="p-2 sm:p-4 space-y-6 font-sans max-w-7xl mx-auto text-slate-900 dark:text-slate-100">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (
