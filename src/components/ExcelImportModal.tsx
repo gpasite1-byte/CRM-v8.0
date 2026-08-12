@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
+import * as XLSXModule from 'xlsx';
+const XLSX: any = (XLSXModule as any).default || XLSXModule;
 import { 
   FileSpreadsheet, 
   Upload, 

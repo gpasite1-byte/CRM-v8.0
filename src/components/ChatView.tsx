@@ -697,13 +697,14 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     };
 
     pollRealtimeServer();
-    const interval = setInterval(pollRealtimeServer, 1500);
+    const pollTime = activeTab === 'chat' ? 8000 : 15000;
+    const interval = setInterval(pollRealtimeServer, pollTime);
 
     return () => {
       isSubscribed = false;
       clearInterval(interval);
     };
-  }, [loggedUser.id]);
+  }, [loggedUser.id, activeTab]);
 
   // Auto scroll to bottom when messages update
   useEffect(() => {
@@ -1257,24 +1258,24 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
   return (
     <>
-      <div className={`h-[calc(100vh-100px)] min-h-[500px] bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden text-left font-sans relative ${!activeTab || activeTab === 'chat' ? 'flex' : 'hidden'}`}>
+      <div className={`h-[calc(100vh-110px)] min-h-[550px] bg-slate-950/90 backdrop-blur-2xl rounded-3xl border border-cyan-500/30 shadow-2xl overflow-hidden text-left font-sans relative ${!activeTab || activeTab === 'chat' ? 'flex' : 'hidden'}`}>
       
       {/* LEFT SIDEBAR: Channels & Users */}
-      <div className={`w-full md:w-80 bg-slate-900 text-slate-100 flex-col border-r border-slate-800 shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-80 bg-slate-900/95 text-slate-100 flex-col border-r border-slate-800/80 shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
         
         {/* User Status Bar */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/80">
           <div className="flex items-center gap-3">
             <div className="relative">
               <UserAvatar name={loggedUser.nome} foto={loggedUser.foto} size="md" />
               <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-slate-900 ${
-                userStatus === 'online' ? 'bg-emerald-500' :
-                userStatus === 'ausente' ? 'bg-amber-500' : 'bg-red-500'
+                userStatus === 'online' ? 'bg-emerald-500 glow-emerald' :
+                userStatus === 'ausente' ? 'bg-amber-500 glow-amber' : 'bg-red-500'
               }`} />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white leading-tight truncate max-w-[130px]">{loggedUser.nome}</h3>
-              <p className="text-[10px] text-slate-400 font-medium capitalize">{loggedUser.perfil}</p>
+              <h3 className="text-xs font-extrabold text-white leading-tight truncate max-w-[130px]">{loggedUser.nome}</h3>
+              <p className="text-[10px] text-cyan-400 font-bold capitalize">{loggedUser.perfil}</p>
             </div>
           </div>
 
@@ -1282,7 +1283,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
             <select
               value={userStatus}
               onChange={(e) => setUserStatus(e.target.value as any)}
-              className="bg-slate-800 text-slate-200 text-[11px] font-bold py-1 px-2 rounded-lg border border-slate-700 cursor-pointer focus:outline-none"
+              className="bg-slate-950 text-cyan-300 text-[11px] font-bold py-1.5 px-2 rounded-xl border border-cyan-500/40 cursor-pointer focus:outline-none shadow-sm"
             >
               <option value="online">🟢 Online</option>
               <option value="ausente">🟡 Ausente</option>
@@ -1292,15 +1293,15 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
         </div>
 
         {/* Search */}
-        <div className="p-3 border-b border-slate-800">
+        <div className="p-3 border-b border-slate-800/80">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
+            <Search size={14} className="absolute left-3 top-2.5 text-cyan-400" />
             <input
               type="text"
               placeholder="Pesquisar equipa ou canal..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-800 text-slate-200 text-xs pl-8 pr-3 py-2 rounded-xl border border-slate-700/80 focus:outline-none focus:border-blue-500 placeholder-slate-500"
+              className="w-full bg-slate-950 text-slate-100 text-xs pl-8 pr-3 py-2 rounded-xl border border-slate-700/80 focus:outline-none focus:border-cyan-400 placeholder-slate-500 transition shadow-inner"
             />
           </div>
         </div>
@@ -1310,34 +1311,34 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
           
           {/* Group Channels */}
           <div>
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
+            <div className="flex items-center justify-between text-[11px] font-bold text-cyan-400 uppercase tracking-wider mb-2 px-1">
               <span className="flex items-center gap-1.5"><Hash size={13} /> Canais da Equipa</span>
               <button
                 onClick={() => setShowNewGroupModal(true)}
-                className="hover:text-white p-0.5 rounded hover:bg-slate-800 transition"
+                className="hover:text-white p-1 rounded-lg hover:bg-slate-800 text-cyan-400 transition"
                 title="Criar Novo Canal"
               >
                 <Plus size={14} />
               </button>
             </div>
 
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {channels.map(ch => {
                 const isActive = !activeDMUser && activeChannelId === ch.id;
                 return (
                   <button
                     key={ch.id}
                     onClick={() => handleSelectGroupChannel(ch)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition ${
-                      isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                      isActive ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-cyan-900/40 border border-cyan-400/30' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <Hash size={14} className={isActive ? 'text-white' : 'text-slate-500'} />
+                      <Hash size={14} className={isActive ? 'text-white' : 'text-cyan-400'} />
                       <span className="truncate">{ch.name}</span>
                     </div>
                     {ch.unreadCount ? (
-                      <span className="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                      <span className="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">
                         {ch.unreadCount}
                       </span>
                     ) : null}
@@ -1349,7 +1350,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
           {/* Direct Messages */}
           <div>
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">
+            <div className="flex items-center justify-between text-[11px] font-bold text-cyan-400 uppercase tracking-wider mb-2 px-1">
               <span className="flex items-center gap-1.5"><Users size={13} /> Mensagens Diretas ({filteredUsers.filter(u => u.id !== loggedUser.id).length})</span>
             </div>
 
@@ -1384,26 +1385,26 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                       key={user.id}
                       onClick={() => handleSelectDM(user)}
                       className={`w-full flex items-center justify-between px-2.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer ${
-                        isActive ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        isActive ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-cyan-900/40 border border-cyan-400/30' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 pr-1.5">
                         <div className="relative shrink-0">
                           <UserAvatar name={user.nome} foto={user.foto} size="sm" />
                           <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${
-                            user.status === 'ativo' ? 'bg-emerald-500' : 'bg-slate-500'
+                            user.status === 'ativo' ? 'bg-emerald-500 glow-emerald' : 'bg-slate-500'
                           }`} />
                         </div>
                         <div className="text-left truncate flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
                             <p className={`font-bold leading-tight truncate ${isActive ? 'text-white' : 'text-slate-200'}`}>{user.nome}</p>
                             {lastMsg && (
-                              <span className={`text-[9px] shrink-0 font-mono ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
+                              <span className={`text-[9px] shrink-0 font-mono ${isActive ? 'text-cyan-100' : 'text-slate-400'}`}>
                                 {lastMsg.timestamp}
                               </span>
                             )}
                           </div>
-                          <p className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-blue-100' : unreadCount > 0 ? 'text-amber-300 font-bold' : 'text-slate-400'}`}>
+                          <p className={`text-[10px] truncate mt-0.5 ${isActive ? 'text-cyan-100' : unreadCount > 0 ? 'text-amber-300 font-bold' : 'text-slate-400'}`}>
                             {snippet}
                           </p>
                         </div>
@@ -1425,15 +1426,15 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       </div>
 
       {/* RIGHT MAIN CHAT WINDOW */}
-      <div className={`flex-1 flex-col bg-slate-50 relative overflow-hidden ${mobileShowChat ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`flex-1 flex flex-col bg-slate-900/60 relative overflow-hidden ${mobileShowChat ? 'flex' : 'hidden md:flex'}`}>
         
         {/* Chat Header */}
-        <div className="h-16 px-3 sm:px-6 bg-white border-b border-gray-200 flex items-center justify-between shrink-0 shadow-2xs">
+        <div className="h-16 px-4 sm:px-6 bg-slate-950/90 border-b border-slate-800/80 flex items-center justify-between shrink-0 shadow-lg backdrop-blur-md">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* Mobile Back Button */}
             <button
               onClick={() => setMobileShowChat(false)}
-              className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
+              className="md:hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer shrink-0"
               title="Voltar aos canais e conversas"
             >
               <ArrowLeft size={20} />
@@ -1442,32 +1443,32 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
             {activeDMUser ? (
               <div className="relative shrink-0">
                 <UserAvatar name={activeDMUser.nome} foto={activeDMUser.foto} size="md" />
-                <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                  activeDMUser.status === 'ativo' ? 'bg-emerald-500' : 'bg-slate-400'
+                <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-slate-900 ${
+                  activeDMUser.status === 'ativo' ? 'bg-emerald-500 glow-emerald' : 'bg-slate-400'
                 }`} />
               </div>
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center font-bold shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white flex items-center justify-center font-bold shrink-0 shadow-md shadow-cyan-900/40 border border-cyan-400/30">
                 <Hash size={20} />
               </div>
             )}
 
             <div className="min-w-0 truncate">
               <div className="flex items-center gap-1.5 sm:gap-2 truncate">
-                <h2 className="text-xs sm:text-sm font-black text-slate-900 capitalize truncate">
+                <h2 className="text-xs sm:text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-blue-200 capitalize truncate">
                   {activeDMUser ? activeDMUser.nome : `#${activeTitle}`}
                 </h2>
                 <button
                   onClick={() => setShowCPaaSModal(true)}
-                  className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/80 hover:bg-blue-100 transition cursor-pointer shrink-0"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-900/60 transition cursor-pointer shrink-0 shadow-sm"
                   title="Ver Estado CPaaS WebRTC e Servidores STUN/TURN"
                 >
-                  <Radio size={12} className={peerConnected ? 'text-emerald-500 animate-pulse' : 'text-amber-500'} />
+                  <Radio size={12} className={peerConnected ? 'text-emerald-400 animate-pulse' : 'text-amber-400'} />
                   <span>CPaaS WebRTC: {peerConnected ? 'Ativo' : 'Ligar...'}</span>
-                  <Info size={12} className="text-blue-500 ml-0.5" />
+                  <Info size={12} className="text-cyan-400 ml-0.5" />
                 </button>
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">
+              <p className="text-[10px] sm:text-xs text-slate-400 font-medium truncate">
                 {activeDMUser
                   ? (activeDMUser.funcao ? `${activeDMUser.funcao} • ${activeDMUser.email}` : 'Comercial GPA')
                   : (channels.find(c => c.id === activeChannelId)?.description || 'Canal de comunicação da equipa')}
@@ -1479,16 +1480,16 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleStartCall('audio')}
-              className="px-3.5 py-2 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-200 transition shadow-2xs cursor-pointer"
+              className="px-3.5 py-2 bg-slate-900 hover:bg-emerald-600 hover:text-white text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-2 border border-emerald-500/40 transition shadow-md cursor-pointer"
               title="Iniciar Chamada de Voz"
             >
-              <Phone size={15} className="text-emerald-600" />
+              <Phone size={15} className="text-emerald-400" />
               <span className="hidden sm:inline">Voz</span>
             </button>
 
             <button
               onClick={() => handleStartCall('video')}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer"
+              className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 transition shadow-lg shadow-cyan-500/25 cursor-pointer"
               title="Iniciar Vídeo Chamada HD"
             >
               <Video size={15} />
@@ -1498,12 +1499,14 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
         </div>
 
         {/* Messages Feed Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar bg-animated-mesh bg-tech-grid">
           {currentMessages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-2">
-              <MessageSquare size={36} className="text-slate-300" />
-              <p className="text-xs font-bold text-slate-600">Nenhuma mensagem neste canal ainda.</p>
-              <p className="text-[11px] text-slate-400">Escreva uma mensagem ou inicie uma videochamada abaixo.</p>
+            <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-3">
+              <div className="w-16 h-16 rounded-3xl bg-slate-900/80 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-xl">
+                <MessageSquare size={32} />
+              </div>
+              <p className="text-sm font-extrabold text-white">Nenhuma mensagem neste canal ainda.</p>
+              <p className="text-xs text-slate-400 max-w-xs">Escreva a primeira mensagem ou inicie uma videochamada em direto com a equipa.</p>
             </div>
           ) : (
             currentMessages.map((msg) => {
@@ -1511,8 +1514,9 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
               if (msg.isSystem) {
                 return (
-                  <div key={msg.id} className="flex justify-center my-2">
-                    <span className="bg-slate-200 text-slate-700 text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                  <div key={msg.id} className="flex justify-center my-3">
+                    <span className="bg-slate-800/90 text-amber-300 border border-amber-500/30 text-[11px] font-bold px-4 py-1.5 rounded-full flex items-center gap-2 shadow-md">
+                      <Sparkles size={13} className="text-amber-400" />
                       {msg.text}
                     </span>
                   </div>
@@ -1523,29 +1527,29 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                 <div key={msg.id} className={`flex gap-3 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!isMine && <UserAvatar name={msg.senderName} foto={msg.senderAvatar} size="sm" />}
 
-                  <div className={`max-w-[75%] sm:max-w-[60%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div className={`max-w-[78%] sm:max-w-[65%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
                     <div className="flex items-center gap-2 mb-1 px-1">
-                      <span className="text-[11px] font-extrabold text-slate-700">{msg.senderName}</span>
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <span className="text-[11px] font-extrabold text-cyan-300">{msg.senderName}</span>
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
                         {msg.timestamp}
-                        {isMine && <span className="text-blue-500 font-black text-[10px]" title="Entregue em tempo real">✓✓</span>}
+                        {isMine && <span className="text-cyan-400 font-black text-[10px]" title="Entregue em tempo real">✓✓</span>}
                       </span>
                     </div>
 
-                    <div className={`p-3.5 rounded-2xl text-xs font-medium space-y-2 shadow-2xs ${
+                    <div className={`p-3.5 rounded-2xl text-xs font-medium space-y-2 shadow-lg ${
                       isMine
-                        ? 'bg-[#003366] text-white rounded-tr-none'
-                        : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-none'
+                        ? 'chat-bubble-mine rounded-tr-xs'
+                        : 'chat-bubble-other rounded-tl-xs'
                     }`}>
                       {msg.text && <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>}
 
                       {msg.attachment && (
-                        <div className="mt-2 rounded-xl overflow-hidden border border-black/10 max-w-sm bg-black/5">
+                        <div className="mt-2 rounded-xl overflow-hidden border border-white/20 max-w-sm bg-slate-950/60 shadow-inner">
                           {msg.attachment.type === 'image' ? (
                             <img src={msg.attachment.url} alt="anexo" className="max-h-60 w-full object-cover rounded-xl" />
                           ) : (
-                            <div className="p-3 flex items-center gap-2 text-xs font-bold text-slate-700 bg-white">
-                              <FileText size={18} className="text-blue-600" />
+                            <div className="p-3 flex items-center gap-2 text-xs font-bold text-white bg-slate-900/80">
+                              <FileText size={18} className="text-cyan-400" />
                               <span className="truncate">{msg.attachment.name}</span>
                             </div>
                           )}
@@ -1559,8 +1563,8 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                             <button
                               key={emoji}
                               onClick={() => handleAddReaction(msg.id, emoji)}
-                              className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 transition ${
-                                isMine ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700 border'
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 transition ${
+                                isMine ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-200 border border-slate-700'
                               }`}
                             >
                               <span>{emoji}</span>
@@ -1577,7 +1581,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                         <button
                           key={e}
                           onClick={() => handleAddReaction(msg.id, e)}
-                          className="hover:scale-125 transition text-xs p-0.5"
+                          className="hover:scale-125 transition text-xs p-0.5 cursor-pointer"
                         >
                           {e}
                         </button>
@@ -1593,19 +1597,19 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
         {/* Attachment Preview Bar */}
         {attachmentPreview && (
-          <div className="px-6 py-2 bg-blue-50 border-t border-blue-100 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-blue-900">
+          <div className="px-6 py-2.5 bg-slate-950 border-t border-cyan-500/30 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
               {attachmentPreview.type === 'image' ? <ImageIcon size={16} /> : <FileText size={16} />}
               <span>Ficheiro pronto a enviar: {attachmentPreview.name}</span>
             </div>
-            <button onClick={() => setAttachmentPreview(null)} className="text-blue-800 hover:text-red-600">
+            <button onClick={() => setAttachmentPreview(null)} className="text-slate-400 hover:text-red-400 cursor-pointer">
               <X size={16} />
             </button>
           </div>
         )}
 
         {/* Input Message Footer */}
-        <div className="p-4 bg-white border-t border-gray-200 shrink-0">
+        <div className="p-3 sm:p-4 bg-slate-950/90 border-t border-slate-800/80 shrink-0 backdrop-blur-md">
           <form onSubmit={handleSendMessage} className="flex items-center gap-2">
             
             <input
@@ -1618,7 +1622,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              className="p-2.5 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-xl transition cursor-pointer"
               title="Anexar Imagem ou Ficheiro"
             >
               <Paperclip size={18} />
@@ -1630,20 +1634,20 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                 placeholder={`Mensagem para #${activeTitle}...`}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="w-full bg-slate-100 text-slate-800 text-xs px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                className="w-full bg-slate-900/90 text-slate-100 placeholder-slate-400 text-xs px-4 py-3 rounded-2xl border border-slate-700/80 focus:outline-none focus:border-cyan-400 focus:bg-slate-950 transition shadow-inner"
               />
 
               {/* Emoji quick popover */}
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-cyan-300 cursor-pointer"
               >
                 <Smile size={18} />
               </button>
 
               {showEmojiPicker && (
-                <div className="absolute right-0 bottom-12 bg-white border border-gray-200 rounded-2xl shadow-xl p-3 grid grid-cols-6 gap-2 z-50">
+                <div className="absolute right-0 bottom-14 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-3 grid grid-cols-6 gap-2 z-50">
                   {['👍', '❤️', '🚀', '👏', '💼', '✅', '🔥', '📊', '🤝', '🎯', '📍', '💡'].map(e => (
                     <button
                       key={e}

@@ -247,10 +247,10 @@ export default function DashboardView({
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 bg-slate-100 min-h-screen font-sans text-gray-900">
+    <div className="p-4 sm:p-6 space-y-6 theme-surface rounded-3xl min-h-screen font-sans relative overflow-hidden transition-all duration-300">
       
-      {/* HERO BANNER DINÂMICO COM VÍDEO ANIMADO PROMINENTE (Prompt_Direto_e_Suave_Reco.mp4) */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-[#0B172A] to-[#0F2942] text-white p-6 shadow-2xl border-2 border-cyan-400/50 group">
+      {/* HERO BANNER DINÂMICO COM VÍDEO ANIMADO PROMINENTE & MESH GLOW (Prompt_Direto_e_Suave_Reco.mp4) */}
+      <div className="relative overflow-hidden rounded-3xl bg-animated-mesh bg-tech-grid text-white p-6 sm:p-8 shadow-2xl border-2 border-cyan-400/50 group">
         {/* Background Animated Video Layer with High Visibility */}
         <video
           autoPlay

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Usuario, Deal, Cliente, Visita } from '../types';
 import { FileSpreadsheet, Upload, Clipboard, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, Layers, ShieldCheck, Database, UserCheck, Sliders, Filter } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import * as XLSXModule from 'xlsx';
+const XLSX: any = (XLSXModule as any).default || XLSXModule;
 import { BasePropostaRow } from '../data/baseDuasSemanasData';
 import { extractFieldsFromRow } from '../utils/excelParser';
 

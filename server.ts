@@ -2,11 +2,13 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import http from "http";
+import os from "os";
 import { WebSocketServer, WebSocket } from "ws";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
-import * as XLSX from "xlsx";
+import * as XLSXModule from "xlsx";
+const XLSX: any = (XLSXModule as any).default || XLSXModule;
 
 dotenv.config();
 
@@ -32,6 +34,17 @@ function broadcastWS(data: any, senderWs?: WebSocket) {
 
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
+
+// Enable CORS for external networks, browsers and domains
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Serve uploaded files and video/image assets statically
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
@@ -2805,7 +2818,6 @@ function processExcelToImport(allSheetData: { file: string; sheetName: string; r
 // GET /api/parse-documents — Preview raw Excel structure
 app.get("/api/parse-documents", (req, res) => {
   try {
-    const XLSX = require('xlsx');
     const docsDir = path.join(process.cwd(), "Ducumentos");
     if (!fs.existsSync(docsDir)) {
       return res.status(404).json({ error: "Pasta Ducumentos não encontrada" });
@@ -2830,7 +2842,6 @@ app.get("/api/parse-documents", (req, res) => {
 // POST /api/import-excel — Full import from Ducumentos folder into crm-db.json
 app.post("/api/import-excel", (req, res) => {
   try {
-    const XLSX = require('xlsx');
     const docsDir = path.join(process.cwd(), "Ducumentos");
     if (!fs.existsSync(docsDir)) {
       return res.status(404).json({ error: "Pasta Ducumentos não encontrada" });
@@ -2933,7 +2944,7 @@ app.post("/api/import-excel", (req, res) => {
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true, hmr: { server }, ws: false },
+      server: { middlewareMode: true, hmr: { server }, ws: false, allowedHosts: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
@@ -2957,7 +2968,23 @@ async function startServer() {
     });
 
     server.listen(port, '0.0.0.0', () => {
-      console.log(`Server running on http://0.0.0.0:${port} with WebSocket engine on /ws`);
+      console.log(`\n===================================================`);
+      console.log(`🚀 GPA ANGOLA CRM v8.0 PRO SERVIDOR ATIVO!`);
+      console.log(`---------------------------------------------------`);
+      console.log(`🌐 Navegador Local:  http://localhost:${port}`);
+      try {
+        const interfaces = os.networkInterfaces();
+        for (const devName in interfaces) {
+          const iface = interfaces[devName];
+          if (!iface) continue;
+          for (const alias of iface) {
+            if (alias.family === 'IPv4' && !alias.internal) {
+              console.log(`🌐 Rede / Domínio:   http://${alias.address}:${port}`);
+            }
+          }
+        }
+      } catch {}
+      console.log(`===================================================\n`);
       // Auto-migrate and sync all CRM records to Supabase on boot
       executeSupabaseMigrationAndSync().catch(err => console.warn('Supabase boot sync:', err));
     });

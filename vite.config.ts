@@ -34,6 +34,8 @@ export default defineConfig(() => {
       },
     },
     server: {
+      host: '0.0.0.0',
+      allowedHosts: true,
       // Disable standalone HMR WebSocket server on port 24678
       hmr: false,
       ws: false,

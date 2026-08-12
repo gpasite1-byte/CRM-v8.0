@@ -172,3 +172,50 @@ body {
   animation: chartPulseSlow 3s ease-in-out infinite;
 }
 
+/* Luxury Glassmorphism & Neon Glow Utilities */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.15);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.35);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.35);
+}
+
+.chat-bubble-mine {
+  background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+}
+
+.chat-bubble-other {
+  background: rgba(30, 41, 59, 0.92);
+  color: #f8fafc;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+

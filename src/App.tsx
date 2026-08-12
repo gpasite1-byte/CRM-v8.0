@@ -1072,7 +1072,8 @@ export default function App() {
     };
 
     fetchGlobalMessages();
-    const interval = setInterval(fetchGlobalMessages, 2000);
+    // Poll every 10 seconds to save CPU & network bandwidth while keeping real-time responsiveness
+    const interval = setInterval(fetchGlobalMessages, 10000);
     return () => clearInterval(interval);
   }, [loggedUser, activeTab]);
 
