@@ -34,8 +34,9 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // Disable HMR auto-reloads to prevent page flickering and auto-refreshes while user is typing
+      // Disable standalone HMR WebSocket server on port 24678
       hmr: false,
+      ws: false,
       strictPort: false,
     },
   };
