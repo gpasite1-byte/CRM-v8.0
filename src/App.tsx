@@ -11,7 +11,7 @@ import {
 } from './data';
 import { Camera } from 'lucide-react';
 import { processInvoiceAutomation } from './lib/invoiceAutomation';
-import bgVideo from '../videos/Prompt_Direto_e_Suave_Reco.mp4';
+import bgVideo from './assets/videos/Prompt_Direto_e_Suave_Reco.mp4';
 
 function getCurrentMonthLabel(): string {
   const now = new Date();
@@ -2357,8 +2357,8 @@ export default function App() {
               : 'opacity-20 mix-blend-multiply filter contrast-125'
           }`}
         >
-          <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
           <source src={bgVideo} type="video/mp4" />
+          <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
         </video>
       </div>
       
