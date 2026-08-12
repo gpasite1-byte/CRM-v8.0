@@ -74,9 +74,17 @@ export default function App() {
     return loadFromLocalStorage<Usuario | null>('gpa_logged_user', null);
   });
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
-    const saved = loadFromLocalStorage<'dark' | 'light'>('gpa_theme_mode', 'dark');
-    return saved || 'dark';
+    const saved = loadFromLocalStorage<'dark' | 'light'>('gpa_theme_mode', 'light');
+    return saved || 'light';
   });
+
+  useEffect(() => {
+    if (!localStorage.getItem('gpa_theme_migrated_v8')) {
+      setThemeMode('light');
+      localStorage.setItem('gpa_theme_mode', 'light');
+      localStorage.setItem('gpa_theme_migrated_v8', 'true');
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', themeMode);
