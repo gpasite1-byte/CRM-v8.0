@@ -168,13 +168,16 @@ export default function LoginOverlay({ comerciais, onLoginSuccess, addNotificati
     <div id="loginOverlay" className="fixed inset-0 bg-[#060a12] z-[99999] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Animated Video Layer */}
       <video
-        src={bgVideo}
         autoPlay
         loop
         muted
         playsInline
+        preload="auto"
         className="absolute inset-0 w-full h-full object-cover opacity-65 scale-105 filter saturate-150 contrast-110 z-0 pointer-events-none"
-      />
+      >
+        <source src={bgVideo} type="video/mp4" />
+        <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
+      </video>
       
       {/* Dark Ambient Overlay with Glassmorphism highlights */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#060a12] via-[#060a12]/75 to-[#0b1329]/60 backdrop-blur-[2px] pointer-events-none z-0"></div>

@@ -2348,9 +2348,12 @@ export default function App() {
           loop 
           muted 
           playsInline 
+          preload="auto"
           className="w-full h-full object-cover opacity-15 mix-blend-screen"
-          src={bgVideo}
-        />
+        >
+          <source src={bgVideo} type="video/mp4" />
+          <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
+        </video>
       </div>
       
       {/* Floating Chat Message Toast Banner */}

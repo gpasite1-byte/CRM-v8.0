@@ -41,10 +41,31 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 app.use("/uploads", express.static(UPLOADS_DIR));
 
 const VIDEOS_DIR = path.join(process.cwd(), "videos");
+const PUBLIC_VIDEOS_DIR = path.join(process.cwd(), "public", "videos");
+if (!fs.existsSync(PUBLIC_VIDEOS_DIR)) {
+  fs.mkdirSync(PUBLIC_VIDEOS_DIR, { recursive: true });
+}
 if (fs.existsSync(VIDEOS_DIR)) {
   app.use("/videos", express.static(VIDEOS_DIR));
   app.use("/imagens", express.static(VIDEOS_DIR));
+  try {
+    const files = fs.readdirSync(VIDEOS_DIR);
+    for (const file of files) {
+      const srcFile = path.join(VIDEOS_DIR, file);
+      const destFile = path.join(PUBLIC_VIDEOS_DIR, file);
+      if (fs.statSync(srcFile).isFile()) {
+        fs.copyFileSync(srcFile, destFile);
+      }
+    }
+  } catch (e) {
+    console.warn("Error syncing videos to public/videos:", e);
+  }
 }
+const PUBLIC_DIR = path.join(process.cwd(), "public");
+if (fs.existsSync(PUBLIC_DIR)) {
+  app.use(express.static(PUBLIC_DIR));
+}
+
 
 const LOGO_FILE = path.join(process.cwd(), "logo-db.json");
 let serverAppLogo = "/gpa_logo.svg";
