@@ -29,7 +29,16 @@ interface CrmKanbanViewProps {
 export default function CrmKanbanView({
   deals,
   comerciais = [],
+  refDate,
+  onRefDateChange,
+  selectedPeriod,
+  onPeriodTypeChange,
   selectedComercial: propSelectedComercial,
+  onComercialChange,
+  selectedEmpresa,
+  onEmpresaChange,
+  selectedProvincia,
+  onProvinciaChange,
   onOpenAddDeal,
   onMoveDeal,
   onDeleteDeal

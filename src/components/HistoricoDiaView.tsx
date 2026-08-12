@@ -48,7 +48,16 @@ export default function HistoricoDiaView({
   operacoesLog = [],
   loggedUser,
   comerciais = [],
+  refDate,
+  onRefDateChange,
+  selectedPeriod,
+  onPeriodTypeChange,
   selectedComercial: propSelectedComercial,
+  onComercialChange,
+  selectedEmpresa,
+  onEmpresaChange,
+  selectedProvincia,
+  onProvinciaChange,
   onRevertOperation,
   onClearOperacoesLog
 }: HistoricoDiaViewProps) {

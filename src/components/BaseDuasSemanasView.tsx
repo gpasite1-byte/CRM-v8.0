@@ -31,7 +31,23 @@ interface BaseDuasSemanasViewProps {
   ) => void;
 }
 
-export default function BaseDuasSemanasView({ deals = [], onAddDeal, loggedUser, comerciais = [], onLogOperation }: BaseDuasSemanasViewProps) {
+export default function BaseDuasSemanasView({
+  deals = [],
+  onAddDeal,
+  loggedUser,
+  comerciais = [],
+  onLogOperation,
+  refDate,
+  onRefDateChange,
+  selectedPeriod,
+  onPeriodTypeChange,
+  selectedComercial,
+  onComercialChange,
+  selectedEmpresa,
+  onEmpresaChange,
+  selectedProvincia,
+  onProvinciaChange
+}: BaseDuasSemanasViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [semanaFilter, setSemanaFilter] = useState<string>('Todas');
   const [comercialFilter, setComercialFilter] = useState<string>('Todos');
