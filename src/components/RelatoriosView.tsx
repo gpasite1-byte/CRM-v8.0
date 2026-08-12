@@ -390,7 +390,7 @@ export default function RelatoriosView({
   const fourMonths = historicoMeses.slice(-4);
 
   return (
-    <div className="w-full space-y-4 font-serif text-gray-900 my-2 print:p-0">
+    <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 my-2 print:p-0">
       
       {/* Title & Navigation Header */}
       <div className="bg-[#1B365D] text-white py-3 px-4 rounded-t-sm shadow-sm border border-[#122442] print:hidden">

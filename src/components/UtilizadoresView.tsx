@@ -107,7 +107,7 @@ export default function UtilizadoresView({
   const historyLogs = getHistoryLogs();
 
   return (
-    <div className="w-full space-y-4 font-serif text-gray-900 my-2">
+    <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 my-2">
       
       {/* Title Banner */}
       <div className="bg-[#1B365D] text-white py-3 px-4 rounded-t-sm shadow-sm border border-[#122442] flex flex-wrap items-center justify-between gap-3">
