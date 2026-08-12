@@ -258,10 +258,11 @@ export default function DashboardView({
           muted
           playsInline
           preload="auto"
-          className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-100 group-hover:scale-105 transition-transform duration-1000"
+          ref={(el) => { if (el && el.paused) el.play().catch(() => {}); }}
+          className="absolute inset-0 w-full h-full object-cover opacity-75 mix-blend-overlay group-hover:scale-105 transition-transform duration-1000"
         >
-          <source src={bgVideo} type="video/mp4" />
           <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
+          <source src={bgVideo} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/70 to-blue-950/50 backdrop-blur-[1px]" />
 

@@ -2349,10 +2349,15 @@ export default function App() {
           muted 
           playsInline 
           preload="auto"
-          className="w-full h-full object-cover opacity-15 mix-blend-screen"
+          ref={(el) => { if (el && el.paused) el.play().catch(() => {}); }}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
+            themeMode === 'dark' 
+              ? 'opacity-35 mix-blend-screen' 
+              : 'opacity-20 mix-blend-multiply filter contrast-125'
+          }`}
         >
-          <source src={bgVideo} type="video/mp4" />
           <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
+          <source src={bgVideo} type="video/mp4" />
         </video>
       </div>
       

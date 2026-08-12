@@ -165,7 +165,7 @@ export default function LoginOverlay({ comerciais, onLoginSuccess, addNotificati
   };
 
   return (
-    <div id="loginOverlay" className="fixed inset-0 bg-[#060a12] z-[99999] flex items-center justify-center p-4 relative overflow-hidden">
+    <div id="loginOverlay" className="fixed inset-0 bg-[#060a12] z-[99999] flex items-center justify-center p-4 overflow-hidden">
       {/* Background Animated Video Layer */}
       <video
         autoPlay
@@ -173,10 +173,11 @@ export default function LoginOverlay({ comerciais, onLoginSuccess, addNotificati
         muted
         playsInline
         preload="auto"
-        className="absolute inset-0 w-full h-full object-cover opacity-65 scale-105 filter saturate-150 contrast-110 z-0 pointer-events-none"
+        ref={(el) => { if (el && el.paused) el.play().catch(() => {}); }}
+        className="absolute inset-0 w-full h-full object-cover opacity-80 scale-105 filter saturate-150 contrast-110 z-0 pointer-events-none"
       >
-        <source src={bgVideo} type="video/mp4" />
         <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
+        <source src={bgVideo} type="video/mp4" />
       </video>
       
       {/* Dark Ambient Overlay with Glassmorphism highlights */}
