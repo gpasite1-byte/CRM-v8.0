@@ -3541,8 +3541,9 @@ export default function App() {
         onImportDeals={handleImportDeals}
         onImportClients={handleImportClients}
         onImportVisits={handleImportVisits}
-        deals={deals}
-        visits={visits}
+        currentDeals={deals}
+        currentClients={clients}
+        currentVisits={visits}
       />
 
       {/* PDF Intelligence Data Extractor Modal */}
