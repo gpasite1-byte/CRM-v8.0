@@ -30,7 +30,6 @@ function broadcastWS(data: any, senderWs?: WebSocket) {
         client.send(payload);
       }
     });
-}
   } catch (e) {
     console.error("WS broadcast error:", e);
   }
