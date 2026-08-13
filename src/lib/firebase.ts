@@ -8,7 +8,10 @@ import {
   collection,
   getDocs,
   getDocFromServer,
-  setLogLevel
+  setLogLevel,
+  query,
+  orderBy,
+  limit
 } from "firebase/firestore";
 import firebaseConfig from "../../firebase-applet-config.json";
 
@@ -24,13 +27,9 @@ let isQuotaExhausted = false;
 try {
   const cachedQuota = localStorage.getItem('gpa_firestore_quota_exhausted');
   if (cachedQuota) {
-    const quotaTime = parseInt(cachedQuota, 10);
-    // Quota resets daily, cache for 6 hours
-    if (Date.now() - quotaTime < 6 * 60 * 60 * 1000) {
-      isQuotaExhausted = true;
-    } else {
-      localStorage.removeItem('gpa_firestore_quota_exhausted');
-    }
+    // FORCE RESET QUOTA CACHE so the new optimized queries run immediately
+    localStorage.removeItem('gpa_firestore_quota_exhausted');
+    isQuotaExhausted = false;
   }
 } catch {}
 
@@ -168,7 +167,7 @@ export async function saveChatMessageToFirestore(message: any) {
 export function subscribeChatMessagesFromFirestore(onUpdate: (messages: any[]) => void) {
   if (isQuotaExhausted) return () => {};
   try {
-    const chatColl = collection(db, "chat_messages");
+    const chatColl = query(collection(db, "chat_messages"), orderBy('createdAt', 'desc'), limit(50));
     let unsubscribe: (() => void) | null = null;
     unsubscribe = onSnapshot(
       chatColl,

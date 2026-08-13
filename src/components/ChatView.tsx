@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, updateDoc, query, orderBy, limit } from 'firebase/firestore';
 import Peer, { MediaConnection } from 'peerjs';
 import { db, checkIsQuotaExhausted } from '../lib/firebase';
 import { Usuario } from '../types';
@@ -435,7 +435,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
     try {
       // 1. Listen for real-time messages in Firestore collection 'chat_messages'
-      const messagesRef = collection(db, 'chat_messages');
+      const messagesRef = query(collection(db, 'chat_messages'), orderBy('createdAt', 'desc'), limit(50));
       unsubMessages = onSnapshot(messagesRef, (snapshot) => {
         const firestoreMsgs: ChatMessage[] = [];
         snapshot.forEach((docSnap) => {
@@ -476,7 +476,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       });
 
       // 2. Listen for real-time calling signals in Firestore collection 'chat_call_signals'
-      const callsRef = collection(db, 'chat_call_signals');
+      const callsRef = query(collection(db, 'chat_call_signals'), orderBy('timestamp', 'desc'), limit(15));
       unsubCalls = onSnapshot(callsRef, (snapshot) => {
         const now = Date.now();
         snapshot.docChanges().forEach((change) => {
