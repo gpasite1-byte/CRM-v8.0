@@ -8,6 +8,9 @@ import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import * as XLSXModule from "xlsx";
+import PusherServer from "pusher";
+import * as Ably from "ably";
+
 const XLSX: any = (XLSXModule as any).default || XLSXModule;
 
 dotenv.config();
@@ -27,10 +30,41 @@ function broadcastWS(data: any, senderWs?: WebSocket) {
         client.send(payload);
       }
     });
+}
   } catch (e) {
     console.error("WS broadcast error:", e);
   }
 }
+
+// ----------------------------------------------------
+// PUSHER + ABLY FAILOVER BROADCAST
+// ----------------------------------------------------
+const pusher = new PusherServer({
+  appId: "2186065",
+  key: "479f67b0dfb78f92cc03",
+  secret: "4b25b0669d97cbff5f4d",
+  cluster: "sa1",
+  useTLS: true
+});
+
+const ably = new Ably.Rest("m2MFEg.cqOUDw:amKMfAOZjeP_x3GZadOMr3tBF_trR1FzZBD2QUtkxJQ");
+
+async function broadcastFailover(eventName: string, payload: any) {
+  try {
+    // Attempt 1: Pusher
+    await pusher.trigger("gpa-crm-channel", eventName, payload);
+  } catch (err) {
+    console.warn("Pusher failed, failing over to Ably:", err);
+    try {
+      // Attempt 2: Ably
+      const channel = ably.channels.get("gpa-crm-channel");
+      await channel.publish(eventName, payload);
+    } catch (err2) {
+      console.error("Both Pusher and Ably failed to broadcast:", err2);
+    }
+  }
+}
+// ----------------------------------------------------
 
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
@@ -136,6 +170,7 @@ app.post("/api/realtime/messages", (req, res) => {
       current.push(newMsg);
       saveServerChatMessages(current);
       broadcastWS({ type: "NEW_MESSAGE", payload: newMsg });
+      broadcastFailover("NEW_MESSAGE", newMsg).catch(() => {});
     }
     res.json({ success: true, message: newMsg });
   } catch (e: any) {
@@ -151,6 +186,7 @@ const handleReaction = (req: any, res: any) => {
     const updated = current.map((m: any) => m.id === msgId ? { ...m, reactions } : m);
     saveServerChatMessages(updated);
     broadcastWS({ type: "REACTION_UPDATE", payload: { msgId, reactions } });
+    broadcastFailover("REACTION_UPDATE", { msgId, reactions }).catch(() => {});
     res.json({ success: true });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
@@ -206,6 +242,7 @@ app.post("/api/realtime/calls", (req, res) => {
 
     activeCallSignals.push(fullSig);
     broadcastWS({ type: signal.type, payload: fullSig });
+    broadcastFailover(signal.type, fullSig).catch(() => {});
 
     res.json({ success: true, signal: fullSig });
   } catch (e: any) {

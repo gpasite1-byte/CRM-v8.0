@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, doc, onSnapshot, setDoc, updateDoc, query, orderBy, limit } from 'firebase/firestore';
 import Peer, { MediaConnection } from 'peerjs';
+import Pusher from 'pusher-js';
+import * as Ably from 'ably';
 import { db, checkIsQuotaExhausted } from '../lib/firebase';
 import { Usuario } from '../types';
 import UserAvatar from './UserAvatar';
@@ -59,6 +61,10 @@ export interface ChatMessage {
   replyToId?: string;
   isSystem?: boolean;
 }
+
+// Global Pusher & Ably Clients for Failover
+const pusherClient = new Pusher("479f67b0dfb78f92cc03", { cluster: "sa1" });
+const ablyClient = new Ably.Realtime.Promise({ key: "m2MFEg.cqOUDw:amKMfAOZjeP_x3GZadOMr3tBF_trR1FzZBD2QUtkxJQ" });
 
 export function getDMChannelId(userAId: string, userBId: string): string {
   const cleanA = (userAId || '').toString().trim().toLowerCase();
@@ -668,6 +674,51 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       console.error(e);
     }
   }, [messages, channels]);
+
+  // Pusher + Ably Realtime Failover Client
+  useEffect(() => {
+    const handleEvent = (data: any) => {
+      const { type, payload } = data;
+      if (!type || !payload) return;
+      
+      if (type === 'NEW_MESSAGE') {
+        setMessages(prev => {
+          if (prev.some(m => m.id === payload.id)) return prev;
+          if (payload.senderId !== loggedUser.id) playNotificationPing();
+          return [...prev, payload];
+        });
+        if (payload.channelId !== activeChannelId && payload.senderId !== loggedUser.id) {
+          setChannels(prev => prev.map(c => c.id === payload.channelId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c));
+        }
+      } else if (type === 'INCOMING_CALL') {
+        processIncomingCallSignal(payload);
+      } else if (type === 'ACCEPT_CALL') {
+        processAcceptCallSignal(payload);
+      } else if (type === 'REJECT_CALL' || type === 'END_CALL') {
+        processEndOrRejectCallSignal(payload);
+      } else if (type === 'REACTION_UPDATE') {
+        setMessages(prev => prev.map(m => m.id === payload.msgId ? { ...m, reactions: payload.reactions } : m));
+      }
+    };
+
+    // Pusher Subscribe
+    const pusherChannel = pusherClient.subscribe("gpa-crm-channel");
+    pusherChannel.bind_global((eventName: string, data: any) => {
+      if (eventName.startsWith("pusher:")) return;
+      handleEvent({ type: eventName, payload: data });
+    });
+
+    // Ably Subscribe
+    const ablyChannel = ablyClient.channels.get("gpa-crm-channel");
+    ablyChannel.subscribe((msg: any) => {
+      handleEvent({ type: msg.name, payload: msg.data });
+    });
+
+    return () => {
+      pusherClient.unsubscribe("gpa-crm-channel");
+      ablyChannel.unsubscribe();
+    };
+  }, [loggedUser.id, activeChannelId]);
 
   // Fast Real-time Server Polling for Cross-Device Messages & Calling Engine (1.5s)
   useEffect(() => {
