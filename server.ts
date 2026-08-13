@@ -1118,7 +1118,7 @@ function getStoredChatMessages() {
   return defaultMessages;
 }
 
-let activeCallSignals: any[] = [];
+
 
 // WebSocket Server initialization on path /ws
 const wss = new WebSocketServer({ server, path: "/ws" });
