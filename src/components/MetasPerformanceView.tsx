@@ -1,3 +1,7 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Usuario, Deal } from '../types';
+import { Target, Flag, TrendingUp, Award, Trophy, CheckCircle2, AlertTriangle, ShieldCheck, DollarSign, Calculator, HelpCircle, Layers, PieChart } from 'lucide-react';
+import UserAvatar from './UserAvatar';
 import GlobalPeriodBar from './GlobalPeriodBar';
 import { PeriodType } from '../utils/periodEngine';
 
@@ -203,65 +207,65 @@ export default function MetasPerformanceView({
         </h2>
       </div>
 
-      {/* Metas and Performance table - Exact Excel Design */}
-      <div className="bg-white border-x border-b border-gray-400 shadow-md overflow-x-auto -mt-8">
+      {/* Metas and Performance table - Glassmorphic Theme */}
+      <div className="bg-slate-950/90 backdrop-blur-md border border-cyan-500/30 rounded-b-xl shadow-2xl overflow-x-auto -mt-8">
         <table className="w-full text-xs text-left border-collapse min-w-[1000px]">
           <thead>
-            <tr className="bg-[#1B365D] text-white border-b border-[#122442]">
-              <th className="px-3 py-2.5 font-bold border-r border-[#2C4D75]">Comercial</th>
-              <th className="px-3 py-2.5 font-bold text-center border-r border-[#2C4D75]">Função</th>
-              <th className="px-3 py-2.5 font-bold text-right border-r border-[#2C4D75]">Meta semanal</th>
-              <th className="px-3 py-2.5 font-bold text-right border-r border-[#2C4D75]">Propostas</th>
-              <th className="px-3 py-2.5 font-bold text-right border-r border-[#2C4D75]">Valor total</th>
-              <th className="px-3 py-2.5 font-bold text-right border-r border-[#2C4D75]">Aprovado</th>
-              <th className="px-3 py-2.5 font-bold text-right border-r border-[#2C4D75]">% Meta</th>
-              <th className="px-3 py-2.5 font-bold text-right border-r border-[#2C4D75]">Pipeline aberto</th>
-              <th className="px-3 py-2.5 font-bold text-right border-r border-[#2C4D75]">Forecast</th>
-              <th className="px-3 py-2.5 font-bold border-[#2C4D75]">Leitura</th>
+            <tr className="bg-slate-900 text-cyan-300 border-b border-cyan-500/30">
+              <th className="px-3.5 py-3 font-bold border-r border-slate-800">Comercial</th>
+              <th className="px-3.5 py-3 font-bold text-center border-r border-slate-800">Função</th>
+              <th className="px-3.5 py-3 font-bold text-right border-r border-slate-800">Meta semanal</th>
+              <th className="px-3.5 py-3 font-bold text-right border-r border-slate-800">Propostas</th>
+              <th className="px-3.5 py-3 font-bold text-right border-r border-slate-800">Valor total</th>
+              <th className="px-3.5 py-3 font-bold text-right border-r border-slate-800">Aprovado</th>
+              <th className="px-3.5 py-3 font-bold text-right border-r border-slate-800">% Meta</th>
+              <th className="px-3.5 py-3 font-bold text-right border-r border-slate-800">Pipeline aberto</th>
+              <th className="px-3.5 py-3 font-bold text-right border-r border-slate-800">Forecast</th>
+              <th className="px-3.5 py-3 font-bold border-slate-800">Leitura</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-300 font-sans text-gray-900">
+          <tbody className="divide-y divide-slate-800/80 font-sans text-slate-200">
             {dynamicRows.map((row, idx) => {
               const numericPct = row.numericPct;
               const barWidth = Math.min(100, numericPct);
 
               return (
-                <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-3 py-2.5 font-semibold text-gray-900 border-r border-gray-300">
-                    <UserAvatar name={row.comercial} comerciais={comerciais} size="sm" showName={true} nameClassName="font-bold text-gray-900 text-xs ml-1" />
+                <tr key={idx} className="hover:bg-cyan-500/10 transition-colors">
+                  <td className="px-3.5 py-3 font-semibold text-white border-r border-slate-800">
+                    <UserAvatar name={row.comercial} comerciais={comerciais} size="sm" showName={true} nameClassName="font-bold text-white text-xs ml-1" />
                   </td>
-                  <td className="px-3 py-2 text-gray-700 border-r border-gray-300">
+                  <td className="px-3.5 py-3 text-slate-300 border-r border-slate-800 text-center">
                     {row.funcao}
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-800 border-r border-gray-300 whitespace-nowrap">
+                  <td className="px-3.5 py-3 text-right text-slate-300 border-r border-slate-800 whitespace-nowrap font-mono">
                     {row.metaSemanal}
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-800 border-r border-gray-300 whitespace-nowrap">
+                  <td className="px-3.5 py-3 text-right text-slate-300 border-r border-slate-800 whitespace-nowrap font-mono">
                     {row.propostas}
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-800 border-r border-gray-300 whitespace-nowrap">
+                  <td className="px-3.5 py-3 text-right text-slate-300 border-r border-slate-800 whitespace-nowrap font-mono">
                     {row.valorTotal}
                   </td>
-                  <td className="px-3 py-2 text-right font-semibold text-gray-900 border-r border-gray-300 whitespace-nowrap">
+                  <td className="px-3.5 py-3 text-right font-bold text-emerald-400 border-r border-slate-800 whitespace-nowrap font-mono">
                     {row.aprovadoDisplay}
                   </td>
-                  <td className="px-3 py-2 text-right font-bold text-gray-900 border-r border-gray-300 relative overflow-hidden">
+                  <td className="px-3.5 py-3 text-right font-black text-cyan-300 border-r border-slate-800 relative overflow-hidden font-mono">
                     {barWidth > 0 && (
                       <div 
-                        className="absolute inset-y-1 left-1 bg-gradient-to-r from-emerald-200 via-emerald-300 to-emerald-400 opacity-70 rounded-xs"
+                        className="absolute inset-y-1 left-1 bg-gradient-to-r from-teal-500/40 via-emerald-500/50 to-cyan-500/60 rounded-xs"
                         style={{ width: `calc(${barWidth}% - 8px)` }}
                       />
                     )}
                     <span className="relative z-10">{row.percentMetaDisplay}</span>
                   </td>
-                  <td className="px-3 py-2 text-right text-gray-800 border-r border-gray-300 whitespace-nowrap">
+                  <td className="px-3.5 py-3 text-right text-slate-300 border-r border-slate-800 whitespace-nowrap font-mono">
                     {row.pipelineAberto}
                   </td>
-                  <td className="px-3 py-2 text-right font-medium text-gray-900 border-r border-gray-300 whitespace-nowrap">
+                  <td className="px-3.5 py-3 text-right font-bold text-cyan-200 border-r border-slate-800 whitespace-nowrap font-mono">
                     {row.forecast}
                   </td>
-                  <td className="px-3 py-2 font-medium text-gray-800 whitespace-nowrap">
-                    {row.numericPct >= 100 ? 'Meta atingida' : row.leitura}
+                  <td className="px-3.5 py-3 font-semibold text-amber-300 whitespace-nowrap">
+                    {row.numericPct >= 100 ? 'Meta atingida 🏆' : row.leitura}
                   </td>
                 </tr>
               );

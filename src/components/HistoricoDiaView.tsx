@@ -48,7 +48,16 @@ export default function HistoricoDiaView({
   operacoesLog = [],
   loggedUser,
   comerciais = [],
+  refDate,
+  onRefDateChange,
+  selectedPeriod,
+  onPeriodTypeChange,
   selectedComercial: propSelectedComercial,
+  onComercialChange,
+  selectedEmpresa,
+  onEmpresaChange,
+  selectedProvincia,
+  onProvinciaChange,
   onRevertOperation,
   onClearOperacoesLog
 }: HistoricoDiaViewProps) {
@@ -309,65 +318,65 @@ export default function HistoricoDiaView({
 
       {/* KPI Cards for the Selected Day */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-gray-500">
+        <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-cyan-500/30 shadow-lg space-y-1 text-slate-100">
+          <div className="flex items-center justify-between text-cyan-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Operações</span>
-            <Activity size={16} className="text-blue-600" />
+            <Activity size={16} className="text-cyan-400" />
           </div>
-          <div className="text-2xl font-black text-gray-900">{metrics.total}</div>
-          <span className="text-[10px] font-medium text-gray-400">Registo global do dia</span>
+          <div className="text-2xl font-black text-white">{metrics.total}</div>
+          <span className="text-[10px] font-medium text-slate-400">Registo global do dia</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-gray-500">
+        <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-emerald-500/30 shadow-lg space-y-1 text-slate-100">
+          <div className="flex items-center justify-between text-emerald-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">Comerciais Ativos</span>
-            <UserCheck size={16} className="text-emerald-600" />
+            <UserCheck size={16} className="text-emerald-400" />
           </div>
-          <div className="text-2xl font-black text-emerald-700">{metrics.activeComerciais}</div>
-          <span className="text-[10px] font-medium text-gray-400">Usuários que operaram</span>
+          <div className="text-2xl font-black text-emerald-300">{metrics.activeComerciais}</div>
+          <span className="text-[10px] font-medium text-emerald-400/70">Usuários que operaram</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-gray-500">
+        <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-blue-500/30 shadow-lg space-y-1 text-slate-100">
+          <div className="flex items-center justify-between text-blue-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">Novos Registos</span>
-            <PlusCircle size={16} className="text-blue-600" />
+            <PlusCircle size={16} className="text-blue-400" />
           </div>
-          <div className="text-2xl font-black text-blue-700">{metrics.criacoes}</div>
-          <span className="text-[10px] font-medium text-gray-400">Propostas & Clientes</span>
+          <div className="text-2xl font-black text-blue-300">{metrics.criacoes}</div>
+          <span className="text-[10px] font-medium text-blue-400/70">Propostas & Clientes</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-gray-500">
+        <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-purple-500/30 shadow-lg space-y-1 text-slate-100">
+          <div className="flex items-center justify-between text-purple-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">Edições / Alterações</span>
-            <Edit3 size={16} className="text-purple-600" />
+            <Edit3 size={16} className="text-purple-400" />
           </div>
-          <div className="text-2xl font-black text-purple-700">{metrics.edicoes}</div>
-          <span className="text-[10px] font-medium text-gray-400">Atualizações efetuadas</span>
+          <div className="text-2xl font-black text-purple-300">{metrics.edicoes}</div>
+          <span className="text-[10px] font-medium text-purple-400/70">Atualizações efetuadas</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-gray-500">
+        <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-rose-500/30 shadow-lg space-y-1 text-slate-100">
+          <div className="flex items-center justify-between text-rose-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">Exclusões</span>
-            <XCircle size={16} className="text-rose-600" />
+            <XCircle size={16} className="text-rose-400" />
           </div>
-          <div className="text-2xl font-black text-rose-700">{metrics.exclusoes}</div>
-          <span className="text-[10px] font-medium text-gray-400">Itens apagados</span>
+          <div className="text-2xl font-black text-rose-300">{metrics.exclusoes}</div>
+          <span className="text-[10px] font-medium text-rose-400/70">Itens apagados</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-gray-500">
+        <div className="bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-amber-500/30 shadow-lg space-y-1 text-slate-100">
+          <div className="flex items-center justify-between text-amber-400">
             <span className="text-[11px] font-bold uppercase tracking-wider">Reversões</span>
-            <RotateCcw size={16} className="text-amber-600" />
+            <RotateCcw size={16} className="text-amber-400" />
           </div>
-          <div className="text-2xl font-black text-amber-700">{metrics.revertidos}</div>
-          <span className="text-[10px] font-medium text-gray-400">Acções anuladas</span>
+          <div className="text-2xl font-black text-amber-300">{metrics.revertidos}</div>
+          <span className="text-[10px] font-medium text-amber-400/70">Acções anuladas</span>
         </div>
       </div>
 
       {/* Filter Control Section */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-3">
+      <div className="bg-slate-900/90 backdrop-blur-md p-4 rounded-xl border border-cyan-500/20 shadow-lg space-y-3 text-white">
         {/* Date Presets Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <span className="text-xs font-bold text-gray-700 flex items-center gap-1 mr-1">
               <Calendar size={14} className="text-blue-600" /> Data:

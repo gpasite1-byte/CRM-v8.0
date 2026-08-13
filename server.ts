@@ -96,6 +96,137 @@ try {
 // CRM Data Storage File
 const CRM_DB_FILE = path.join(process.cwd(), "crm-db.json");
 
+// Real-time Chat & Calling Serverless/Server API Endpoints for Vercel & Node
+const CHAT_MESSAGES_FILE = process.env.VERCEL ? "/tmp/chat-messages-db.json" : path.join(process.cwd(), "chat-messages-db.json");
+let inMemoryChatMessages: any[] = [];
+
+function loadServerChatMessages(): any[] {
+  try {
+    if (fs.existsSync(CHAT_MESSAGES_FILE)) {
+      const raw = fs.readFileSync(CHAT_MESSAGES_FILE, "utf-8").trim();
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    }
+  } catch (e) {}
+  return inMemoryChatMessages;
+}
+
+function saveServerChatMessages(msgs: any[]) {
+  inMemoryChatMessages = msgs;
+  try {
+    fs.writeFileSync(CHAT_MESSAGES_FILE, JSON.stringify(msgs.slice(-500), null, 2), "utf-8");
+  } catch (e) {}
+}
+
+app.get("/api/realtime/messages", (req, res) => {
+  const msgs = loadServerChatMessages();
+  res.json({ success: true, messages: msgs });
+});
+
+app.post("/api/realtime/messages", (req, res) => {
+  try {
+    const newMsg = req.body;
+    if (!newMsg || !newMsg.id) {
+      return res.status(400).json({ success: false, error: "Invalid message" });
+    }
+    const current = loadServerChatMessages();
+    if (!current.some((m: any) => m.id === newMsg.id)) {
+      current.push(newMsg);
+      saveServerChatMessages(current);
+      broadcastWS({ type: "NEW_MESSAGE", payload: newMsg });
+    }
+    res.json({ success: true, message: newMsg });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+const handleReaction = (req: any, res: any) => {
+  try {
+    const { msgId, reactions } = req.body || {};
+    if (!msgId) return res.status(400).json({ success: false, error: "msgId required" });
+    const current = loadServerChatMessages();
+    const updated = current.map((m: any) => m.id === msgId ? { ...m, reactions } : m);
+    saveServerChatMessages(updated);
+    broadcastWS({ type: "REACTION_UPDATE", payload: { msgId, reactions } });
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+};
+
+app.post("/api/realtime/messages/reaction", handleReaction);
+app.post("/api/realtime/reactions", handleReaction);
+
+// Active real-time calling signals
+let activeCallSignals: Array<{
+  callId: string;
+  senderId: string;
+  targetUserId?: string;
+  type: string;
+  callerName?: string;
+  callerFoto?: string;
+  channelId?: string;
+  timestamp: number;
+}> = [];
+
+app.get("/api/realtime/calls", (req, res) => {
+  try {
+    const userId = String(req.query.userId || "").trim();
+    const now = Date.now();
+    activeCallSignals = activeCallSignals.filter(s => (now - s.timestamp) < 45000);
+
+    const userSignals = activeCallSignals.filter(s => {
+      if (s.senderId === userId) return false;
+      if (s.targetUserId) return s.targetUserId === userId;
+      return true;
+    });
+
+    res.json({ success: true, signals: userSignals });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post("/api/realtime/calls", (req, res) => {
+  try {
+    const signal = req.body;
+    if (!signal || !signal.type) {
+      return res.status(400).json({ success: false, error: "Invalid call signal" });
+    }
+    const fullSig = { ...signal, timestamp: Date.now() };
+
+    if (signal.type === "END_CALL" || signal.type === "REJECT_CALL" || signal.type === "ACCEPT_CALL") {
+      if (signal.callId) {
+        activeCallSignals = activeCallSignals.filter(s => s.callId !== signal.callId);
+      }
+    }
+
+    activeCallSignals.push(fullSig);
+    broadcastWS({ type: signal.type, payload: fullSig });
+
+    res.json({ success: true, signal: fullSig });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post("/api/realtime/calls/clear", (req, res) => {
+  try {
+    const { callId } = req.body || {};
+    if (callId) {
+      activeCallSignals = activeCallSignals.filter(s => s.callId !== callId);
+    } else {
+      activeCallSignals = [];
+    }
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Helper to get Excel Documents directory (supports 'Documentos' as primary and 'Ducumentos' as fallback)
 function getExcelDocsDir(): string {
   const primary = path.join(process.cwd(), "Documentos");

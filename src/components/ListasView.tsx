@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import GlobalPeriodBar from './GlobalPeriodBar';
 import { PeriodType } from '../utils/periodEngine';
 import { Usuario } from '../types';

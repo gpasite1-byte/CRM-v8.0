@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AppLogoImage from './AppLogoImage';
 import { Usuario } from '../types';
 import { Shield, Mail, Phone, Lock, Key, LogIn, ArrowLeft, Headphones } from 'lucide-react';
-import bgVideo from '../../videos/Prompt_Direto_e_Suave_Reco.mp4';
+const bgVideo = '/videos/Prompt_Direto_e_Suave_Reco.mp4';
 
 interface LoginOverlayProps {
   comerciais: Usuario[];

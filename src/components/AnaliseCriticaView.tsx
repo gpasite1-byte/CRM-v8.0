@@ -1,3 +1,5 @@
+import React, { useState, useMemo } from 'react';
+import { FileText, TrendingUp, AlertTriangle, ShieldCheck, Download, Search, CheckCircle2, Building2, ChevronDown, ChevronUp, Clock, Filter } from 'lucide-react';
 import GlobalPeriodBar from './GlobalPeriodBar';
 import { PeriodType } from '../utils/periodEngine';
 import { Usuario, Deal } from '../types';

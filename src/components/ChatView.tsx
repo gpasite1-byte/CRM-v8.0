@@ -99,10 +99,16 @@ function playRingTone(): () => void {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioCtx) return () => {};
     const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
     let isRinging = true;
 
     const playChime = () => {
       if (!isRinging || ctx.state === 'closed') return;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
       const osc1 = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -112,7 +118,7 @@ function playRingTone(): () => void {
       osc1.frequency.setValueAtTime(440, ctx.currentTime); // A4
       osc2.frequency.setValueAtTime(480, ctx.currentTime); // tone pair
 
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
 
       osc1.connect(gain);
@@ -128,7 +134,7 @@ function playRingTone(): () => void {
     playChime();
     const interval = setInterval(() => {
       if (isRinging) playChime();
-    }, 2500);
+    }, 2200);
 
     return () => {
       isRinging = false;
