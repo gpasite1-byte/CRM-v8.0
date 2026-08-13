@@ -47,7 +47,7 @@ const pusher = new PusherServer({
   useTLS: true
 });
 
-const ably = new Ably.Rest("m2MFEg.cqOUDw:amKMfAOZjeP_x3GZadOMr3tBF_trR1FzZBD2QUtkxJQ");
+const ably = new Ably.Rest("m2MFEg.B7JOLQ:u_MtYkbldvUScXPtRmsnN7MglKkVGlxJquINjmlVsOo");
 
 async function broadcastFailover(eventName: string, payload: any) {
   try {
