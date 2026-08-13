@@ -352,6 +352,27 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
         setPeerConnected(true);
       });
 
+      peerInstance.on('connection', (conn) => {
+        conn.on('data', (data: any) => {
+          if (!data) return;
+          if (data.type === 'P2P_NEW_MESSAGE') {
+            const sm = data.payload;
+            setMessages(prev => {
+              if (!prev.some(m => m.id === sm.id)) {
+                if (sm.senderId !== loggedUser.id) playNotificationPing();
+                return sortMessages([...prev, sm]);
+              }
+              return prev;
+            });
+          } else if (data.type === 'P2P_CALL_SIGNAL') {
+            const sig = data.payload;
+            if (sig.type === 'INCOMING_CALL') processIncomingCallSignal(sig);
+            else if (sig.type === 'ACCEPT_CALL') processAcceptCallSignal(sig);
+            else if (sig.type === 'REJECT_CALL' || sig.type === 'END_CALL') processEndOrRejectCallSignal(sig);
+          }
+        });
+      });
+
       peerInstance.on('call', (incomingCall) => {
         activeMediaCallRef.current = incomingCall;
 
@@ -711,6 +732,23 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     };
   }, [loggedUser.id]);
 
+  // Real-time WebRTC PeerJS Data Channel Broadcast (Serverless Fallback)
+  const broadcastP2P = (type: string, payload: any) => {
+    if (!peerRef.current || !comerciais) return;
+    comerciais.forEach(u => {
+      if (u.id === loggedUser.id) return;
+      try {
+        const targetId = `gpa_crm_${u.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+        const conn = peerRef.current.connect(targetId, { reliable: true });
+        conn.on('open', () => {
+          conn.send({ type, payload });
+          setTimeout(() => conn.close(), 1000);
+        });
+        conn.on('error', () => {});
+      } catch (e) {}
+    });
+  };
+
   // Auto scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -877,6 +915,9 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
     // Send via WebSocket immediately
     sendRealtimeWSEvent('NEW_MESSAGE', newMsg);
+    
+    // Broadcast directly via P2P for Serverless Reliability
+    broadcastP2P('P2P_NEW_MESSAGE', newMsg);
 
     if (bcRef.current) {
       try {
@@ -941,6 +982,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
     sendFirestoreCallSignal({ ...callSignal, type: 'INCOMING_CALL' });
     sendRealtimeWSEvent('INCOMING_CALL', callSignal);
+    broadcastP2P('P2P_CALL_SIGNAL', { ...callSignal, type: 'INCOMING_CALL' });
 
     // Broadcast call signal via HTTP real-time server endpoint
     fetch('/api/realtime/calls', {
@@ -1017,6 +1059,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
     sendFirestoreCallSignal({ type: 'ACCEPT_CALL', callId: signal.callId, responderId: loggedUser.id });
     sendRealtimeWSEvent('ACCEPT_CALL', { callId: signal.callId, responderId: loggedUser.id });
+    broadcastP2P('P2P_CALL_SIGNAL', { type: 'ACCEPT_CALL', callId: signal.callId, responderId: loggedUser.id });
 
     fetch('/api/realtime/calls', {
       method: 'POST',
@@ -1088,6 +1131,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
     sendFirestoreCallSignal({ type: 'REJECT_CALL', callId: signal.callId });
     sendRealtimeWSEvent('REJECT_CALL', { callId: signal.callId });
+    broadcastP2P('P2P_CALL_SIGNAL', { type: 'REJECT_CALL', callId: signal.callId });
 
     fetch('/api/realtime/calls', {
       method: 'POST',
@@ -1126,6 +1170,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
     sendFirestoreCallSignal({ type: 'END_CALL', endedBy: loggedUser.id, callId: activeCall?.callId });
     sendRealtimeWSEvent('END_CALL', { endedBy: loggedUser.id, callId: activeCall?.callId });
+    broadcastP2P('P2P_CALL_SIGNAL', { type: 'END_CALL', endedBy: loggedUser.id, callId: activeCall?.callId });
 
     fetch('/api/realtime/calls', {
       method: 'POST',
