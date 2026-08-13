@@ -386,6 +386,11 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
           remoteStreamRef.current = remoteStream;
           setRemoteStreamState(remoteStream);
         });
+
+        // FIX: Se o utilizador já tiver o microfone/câmara ligado (ex: é o Caller mas o Receiver fez uma contra-chamada por delay no sinal), atendemos automaticamente!
+        if (mediaStreamRef.current) {
+          incomingCall.answer(mediaStreamRef.current);
+        }
       });
 
       peerInstance.on('error', (err) => {
