@@ -42,18 +42,6 @@
 .font-spacemono { font-family: 'Space Mono', monospace !important; }
 
  :root {
-  color-scheme: light;
-  --app-bg: #f8fafc;
-  --app-surface: #ffffff;
-  --app-surface-2: #eef4ff;
-  --app-card: rgba(255, 255, 255, 0.94);
-  --app-text: #0f172a;
-  --app-muted: #475569;
-  --app-border: rgba(14, 116, 144, 0.18);
-  --app-accent: #0f766e;
-}
-
-[data-theme='dark'] {
   color-scheme: dark;
   --app-bg: #070b14;
   --app-surface: #0f172a;
@@ -63,6 +51,18 @@
   --app-muted: #94a3b8;
   --app-border: rgba(34, 211, 238, 0.16);
   --app-accent: #22d3ee;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-surface: #ffffff;
+  --app-surface-2: #eef4ff;
+  --app-card: rgba(255, 255, 255, 0.94);
+  --app-text: #0f172a;
+  --app-muted: #475569;
+  --app-border: rgba(14, 116, 144, 0.18);
+  --app-accent: #0f766e;
 }
 
 html, body, #root {

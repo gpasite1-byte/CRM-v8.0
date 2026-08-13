@@ -60,7 +60,6 @@ import { saveFileToFirestore, deleteFileFromFirestore, isSupabaseConfigured, con
 import { dispatchRoleNotification } from './lib/notifications';
 import { sanitizeAndDeduplicateUsers, mergeWithInitialComerciais } from './lib/userUtils';
 import { getCurrentWeeks } from './utils/weekUtils';
-import { PeriodType } from './utils/periodEngine';
 
 export default function App() {
   // Initialize stored typography font on startup
@@ -811,7 +810,10 @@ export default function App() {
     let baseDuasSemanas: any[] = [];
     try {
       const saved = localStorage.getItem('gpa_base_duas_semanas');
-      if (saved) baseDuasSemanas = JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) baseDuasSemanas = parsed;
+      }
     } catch (e) {}
 
     const payload = {
@@ -2406,6 +2408,20 @@ export default function App() {
       {/* Main viewport area */}
       <div className={`flex-grow flex flex-col overflow-hidden relative z-10 ${themeMode === 'dark' ? 'bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),linear-gradient(135deg,rgba(2,6,23,0.96),rgba(10,16,35,0.92))]' : 'bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.10),transparent_25%),linear-gradient(135deg,#f8fafc_0%,#eef4ff_60%,#f8fafc_100%)]'}`}>
         
+        {/* Global Ambient Background Video Layer */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 opacity-20">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover filter blur-[1px]"
+          >
+            <source src={bgVideo} type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/60 to-slate-950/90" />
+        </div>
+        
         {/* Structural Topbar */}
         <TopBar
           loggedUser={loggedUser}
@@ -2819,7 +2835,8 @@ export default function App() {
               onImportPropostas={(newPropostas) => {
                 try {
                   const saved = localStorage.getItem('gpa_base_duas_semanas');
-                  let current: any[] = saved ? JSON.parse(saved) : [];
+                  let parsed = saved ? JSON.parse(saved) : null;
+                  let current: any[] = Array.isArray(parsed) ? parsed : [];
                   const updated = [...current];
 
                   newPropostas.forEach(np => {

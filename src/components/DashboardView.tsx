@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import AppLogoImage from './AppLogoImage';
 import { Usuario, Deal, Cliente, Guideline } from '../types';
-import bgVideo from '../../videos/Prompt_Direto_e_Suave_Reco.mp4';
+const bgVideo = '/videos/Prompt_Direto_e_Suave_Reco.mp4';
 import { baseDuasSemanasData } from '../data/baseDuasSemanasData';
 import { 
   PeriodType, 
@@ -100,7 +100,8 @@ export default function DashboardView({
     let savedBase: any[] = [];
     try {
       const saved = localStorage.getItem('gpa_base_duas_semanas');
-      savedBase = saved ? JSON.parse(saved) : baseDuasSemanasData;
+      const parsed = saved ? JSON.parse(saved) : null;
+      savedBase = Array.isArray(parsed) && parsed.length > 0 ? parsed : baseDuasSemanasData;
     } catch {
       savedBase = baseDuasSemanasData;
     }

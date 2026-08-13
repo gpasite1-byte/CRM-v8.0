@@ -15,9 +15,8 @@ export function getUserPhoto(name?: string, explicitFoto?: string, comerciais?: 
   if (explicitFoto && explicitFoto.trim().length > 10) return explicitFoto;
   if (!name || !comerciais || comerciais.length === 0) return '';
   
-  const normName = (name || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const normName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const found = comerciais.find(u => {
-    if (!u || !u.nome) return false;
     const uNorm = u.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
     return uNorm === normName || uNorm.includes(normName) || normName.includes(uNorm);
   });
