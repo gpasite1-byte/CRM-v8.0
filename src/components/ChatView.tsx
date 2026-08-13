@@ -64,7 +64,7 @@ export interface ChatMessage {
 
 // Global Pusher & Ably Clients for Failover
 const pusherClient = new Pusher("479f67b0dfb78f92cc03", { cluster: "sa1" });
-const ablyClient = new Ably.Realtime.Promise({ key: "m2MFEg.B7JOLQ:u_MtYkbldvUScXPtRmsnN7MglKkVGlxJquINjmlVsOo" });
+const ablyClient = new Ably.Realtime({ key: "m2MFEg.B7JOLQ:u_MtYkbldvUScXPtRmsnN7MglKkVGlxJquINjmlVsOo" });
 
 export function getDMChannelId(userAId: string, userBId: string): string {
   const cleanA = (userAId || '').toString().trim().toLowerCase();
