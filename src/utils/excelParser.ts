@@ -179,7 +179,7 @@ export function extractFieldsFromRow(row: Record<string, any>, idx: number): Par
   const parsedAprov = parseExcelDate(dataAprovacaoRaw);
   const parsedPerda = parseExcelDate(dataPerdaRaw);
 
-  const dataEnvio = parsedEnvio.pt || new Date().toLocaleDateString('pt-PT');
+  const dataEnvio = parsedEnvio.pt || '';
   const dataAprovacao = parsedAprov.pt || '';
   const dataPerda = parsedPerda.pt || '';
 

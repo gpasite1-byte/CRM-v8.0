@@ -276,14 +276,25 @@ export function parseDateFlexible(dateStr?: string | Date | number | null): Date
     mon3.setDate(currentMonday.getDate() - 21);
     return mon3;
   }
-  if (lower.includes('27') && lower.includes('jul')) {
-    return new Date(2026, 6, 27);
-  }
-  if (lower.includes('03') && lower.includes('ago')) {
-    return new Date(2026, 7, 3);
-  }
-  if (lower.includes('10') && lower.includes('ago')) {
-    return new Date(2026, 7, 10);
+  const ptWeekMatch = lower.match(/(?:(\d{1,2})\s*[-–]\s*)?(\d{1,2})\s+([a-z]{3,4})/);
+  if (ptWeekMatch) {
+    const startDay = ptWeekMatch[1] ? parseInt(ptWeekMatch[1], 10) : null;
+    const endDay = parseInt(ptWeekMatch[2], 10);
+    const monthStr = ptWeekMatch[3];
+    const monthsShort = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    const month = monthsShort.findIndex(m => monthStr.startsWith(m));
+    if (month !== -1) {
+      const yearMatch = lower.match(/\b(20\d{2})\b/);
+      const year = yearMatch ? parseInt(yearMatch[1], 10) : today.getFullYear();
+      
+      if (startDay !== null && startDay > endDay) {
+         const d = new Date(year, month - 1, startDay);
+         if (!isNaN(d.getTime())) return d;
+      } else {
+         const d = new Date(year, month, startDay !== null ? startDay : endDay);
+         if (!isNaN(d.getTime())) return d;
+      }
+    }
   }
 
   // Fallback to native ISO parse
