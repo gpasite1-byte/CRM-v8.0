@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import AppLogoImage from './AppLogoImage';
 import { Usuario, Deal, Cliente, Guideline } from '../types';
-import bgVideo from '../assets/videos/Prompt_Direto_e_Suave_Reco.mp4';
+import bgVideo from '../../videos/Prompt_Direto_e_Suave_Reco.mp4';
 import { baseDuasSemanasData } from '../data/baseDuasSemanasData';
 import { 
   PeriodType, 
@@ -247,10 +247,10 @@ export default function DashboardView({
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 theme-surface rounded-3xl min-h-screen font-sans relative overflow-hidden transition-all duration-300">
+    <div className="p-4 sm:p-6 space-y-6 bg-slate-100 min-h-screen font-sans text-gray-900">
       
-      {/* HERO BANNER DINÂMICO COM VÍDEO ANIMADO PROMINENTE & MESH GLOW (Prompt_Direto_e_Suave_Reco.mp4) */}
-      <div className="relative overflow-hidden rounded-3xl bg-animated-mesh bg-tech-grid text-white p-6 sm:p-8 shadow-2xl border-2 border-cyan-400/50 group">
+      {/* HERO BANNER DINÂMICO COM VÍDEO ANIMADO PROMINENTE (Prompt_Direto_e_Suave_Reco.mp4) */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-[#0B172A] to-[#0F2942] text-white p-6 shadow-2xl border-2 border-cyan-400/50 group">
         {/* Background Animated Video Layer with High Visibility */}
         <video
           autoPlay
@@ -258,8 +258,7 @@ export default function DashboardView({
           muted
           playsInline
           preload="auto"
-          ref={(el) => { if (el && el.paused) el.play().catch(() => {}); }}
-          className="absolute inset-0 w-full h-full object-cover opacity-75 mix-blend-overlay group-hover:scale-105 transition-transform duration-1000"
+          className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-100 group-hover:scale-105 transition-transform duration-1000"
         >
           <source src={bgVideo} type="video/mp4" />
           <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />

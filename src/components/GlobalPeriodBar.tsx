@@ -38,7 +38,8 @@ export const GlobalPeriodBar: React.FC<GlobalPeriodBarProps> = ({
   onProvinciaChange,
   currentViewName
 }) => {
-  const formattedRefDate = refDate.toISOString().split('T')[0];
+  const safeDate = (refDate instanceof Date && !isNaN(refDate.getTime())) ? refDate : new Date();
+  const formattedRefDate = safeDate.toISOString().split('T')[0];
 
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

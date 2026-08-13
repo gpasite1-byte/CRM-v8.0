@@ -41,11 +41,11 @@ export default function BaseDuasSemanasView({
   onRefDateChange,
   selectedPeriod,
   onPeriodTypeChange,
-  selectedComercial,
+  selectedComercial = 'todos',
   onComercialChange,
-  selectedEmpresa,
+  selectedEmpresa = 'todas',
   onEmpresaChange,
-  selectedProvincia,
+  selectedProvincia = 'todas',
   onProvinciaChange
 }: BaseDuasSemanasViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -375,7 +375,7 @@ export default function BaseDuasSemanasView({
   };
 
   return (
-    <div className="w-full space-y-4 font-sans text-slate-900 dark:text-slate-100 my-2">
+    <div className="w-full space-y-4 font-serif text-gray-900 my-2">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (
@@ -438,52 +438,52 @@ export default function BaseDuasSemanasView({
       {/* Summary Metrics Row */}
       <div className="space-y-2">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 font-sans text-xs">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-sm shadow-2xs">
-            <div className="text-slate-500 dark:text-slate-400 text-[10px] uppercase font-bold flex items-center gap-1">
-              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" /> Registos
+          <div className="bg-white border border-gray-300 p-2.5 rounded-sm shadow-2xs">
+            <div className="text-gray-500 text-[10px] uppercase font-bold flex items-center gap-1">
+              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-700" /> Registos
             </div>
-            <div className="text-lg font-black text-slate-900 dark:text-slate-100 mt-1">{totalPropostasCount} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">propostas</span></div>
+            <div className="text-lg font-black text-gray-900 mt-1">{totalPropostasCount} <span className="text-xs font-normal text-gray-500">propostas</span></div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/20 p-2.5 rounded-sm shadow-2xs">
-            <div className="text-blue-800 dark:text-blue-300 text-[10px] uppercase font-bold flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" /> Valor Total Proposto
+          <div className="bg-white border border-blue-200 bg-blue-50/30 p-2.5 rounded-sm shadow-2xs">
+            <div className="text-blue-800 text-[10px] uppercase font-bold flex items-center gap-1">
+              <TrendingUp className="w-3.5 h-3.5 text-blue-700" /> Valor Total Proposto
             </div>
-            <div className="text-sm font-black text-blue-900 dark:text-blue-200 mt-1 font-mono truncate">{fmtAOA(totalValorProposto)}</div>
+            <div className="text-sm font-black text-blue-900 mt-1 font-mono truncate">{fmtAOA(totalValorProposto)}</div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20 p-2.5 rounded-sm shadow-2xs">
-            <div className="text-emerald-800 dark:text-emerald-300 text-[10px] uppercase font-bold flex items-center gap-1">
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Total Aprovado
+          <div className="bg-white border border-emerald-200 bg-emerald-50/30 p-2.5 rounded-sm shadow-2xs">
+            <div className="text-emerald-800 text-[10px] uppercase font-bold flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Total Aprovado
             </div>
-            <div className="text-sm font-black text-emerald-900 dark:text-emerald-200 mt-1 font-mono truncate">{fmtAOA(totalValorAprovado)}</div>
+            <div className="text-sm font-black text-emerald-900 mt-1 font-mono truncate">{fmtAOA(totalValorAprovado)}</div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/20 p-2.5 rounded-sm shadow-2xs">
-            <div className="text-rose-800 dark:text-rose-300 text-[10px] uppercase font-bold flex items-center gap-1">
-              <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" /> Total Perdido
+          <div className="bg-white border border-rose-200 bg-rose-50/30 p-2.5 rounded-sm shadow-2xs">
+            <div className="text-rose-800 text-[10px] uppercase font-bold flex items-center gap-1">
+              <XCircle className="w-3.5 h-3.5 text-rose-600" /> Total Perdido
             </div>
-            <div className="text-sm font-black text-rose-900 dark:text-rose-200 mt-1 font-mono truncate">{fmtAOA(totalValorPerdido)}</div>
+            <div className="text-sm font-black text-rose-900 mt-1 font-mono truncate">{fmtAOA(totalValorPerdido)}</div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/20 p-2.5 rounded-sm shadow-2xs col-span-2 md:col-span-1">
-            <div className="text-amber-800 dark:text-amber-300 text-[10px] uppercase font-bold flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Valor Ponderado
+          <div className="bg-white border border-amber-200 bg-amber-50/30 p-2.5 rounded-sm shadow-2xs col-span-2 md:col-span-1">
+            <div className="text-amber-800 text-[10px] uppercase font-bold flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-amber-600" /> Valor Ponderado
             </div>
-            <div className="text-sm font-black text-amber-900 dark:text-amber-200 mt-1 font-mono truncate">{fmtAOA(totalValorPonderado)}</div>
+            <div className="text-sm font-black text-amber-900 mt-1 font-mono truncate">{fmtAOA(totalValorPonderado)}</div>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Controls */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 p-3 rounded-sm shadow-xs font-sans space-y-2 text-xs">
+      <div className="bg-white border border-gray-300 p-3 rounded-sm shadow-xs font-sans space-y-2 text-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           
           {/* Semana Filter Buttons */}
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-[#1B365D] dark:text-cyan-400" />
-            <span className="font-bold text-slate-700 dark:text-slate-300 uppercase">Semana de Julho:</span>
-            <div className="inline-flex flex-wrap rounded-sm border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-0.5 gap-0.5">
+            <Filter className="w-4 h-4 text-[#1B365D]" />
+            <span className="font-bold text-gray-700 uppercase">Semana de Julho:</span>
+            <div className="inline-flex flex-wrap rounded-sm border border-gray-300 bg-gray-50 p-0.5 gap-0.5">
               {[
                 { id: 'Todas', label: 'Todas as Semanas' },
                 { id: '06–10 Jul', label: '06–10 Jul (Sem. 1)' },
@@ -496,8 +496,8 @@ export default function BaseDuasSemanasView({
                   onClick={() => setSemanaFilter(s.id)}
                   className={`px-2.5 py-1 text-[11px] font-semibold rounded-xs transition-colors cursor-pointer ${
                     semanaFilter === s.id
-                      ? 'bg-[#1B365D] dark:bg-cyan-600 text-white shadow-xs'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                      ? 'bg-[#1B365D] text-white shadow-xs'
+                      : 'text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   {s.label}
@@ -508,11 +508,11 @@ export default function BaseDuasSemanasView({
 
           {/* Comercial Filter */}
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700 dark:text-slate-300 uppercase">Comercial:</span>
+            <span className="font-bold text-gray-700 uppercase">Comercial:</span>
             <select
               value={comercialFilter}
               onChange={(e) => setComercialFilter(e.target.value)}
-              className="border border-slate-300 dark:border-slate-700 rounded-sm py-1 px-2 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-xs focus:outline-hidden focus:border-[#1B365D]"
+              className="border border-gray-300 rounded-sm py-1 px-2 bg-gray-50 text-xs focus:outline-hidden focus:border-[#1B365D]"
             >
               {gestoresUnicos.map((g) => (
                 <option key={g} value={g}>{g}</option>
@@ -522,11 +522,11 @@ export default function BaseDuasSemanasView({
 
           {/* Estado Proposta Filter */}
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700 dark:text-slate-300 uppercase">Estado:</span>
+            <span className="font-bold text-gray-700 uppercase">Estado:</span>
             <select
               value={estadoFilter}
               onChange={(e) => setEstadoFilter(e.target.value)}
-              className="border border-slate-300 dark:border-slate-700 rounded-sm py-1 px-2 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-xs focus:outline-hidden focus:border-[#1B365D]"
+              className="border border-gray-300 rounded-sm py-1 px-2 bg-gray-50 text-xs focus:outline-hidden focus:border-[#1B365D]"
             >
               {estadosUnicos.map((e) => (
                 <option key={e} value={e}>{e}</option>
@@ -536,13 +536,13 @@ export default function BaseDuasSemanasView({
 
           {/* Search Input */}
           <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Pesquisar cliente, serviço, observações..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-sm text-xs focus:outline-hidden focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D]"
+              className="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-sm text-xs focus:outline-hidden focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D]"
             />
           </div>
 
@@ -550,38 +550,38 @@ export default function BaseDuasSemanasView({
       </div>
 
       {/* Main Excel-like Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-xs overflow-x-auto max-h-[70vh]">
+      <div className="bg-white border border-gray-400 shadow-xs overflow-x-auto max-h-[70vh]">
         <table className="w-full text-[11px] text-left border-collapse min-w-[1100px]">
           <thead className="sticky top-0 z-10">
-            <tr className="bg-[#1B365D] dark:bg-slate-950 text-white border-b border-[#122442] dark:border-slate-800">
-              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Semana</th>
-              <th className="px-2 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 text-center w-8">ID</th>
-              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 text-center whitespace-nowrap">Data envio</th>
-              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap min-w-[140px]">Cliente</th>
-              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 min-w-[200px]">Serviço / Descrição</th>
-              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Estado Proposta</th>
-              <th className="px-3 py-2 font-bold text-right border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Valor Proposto</th>
-              <th className="px-3 py-2 font-bold text-right border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap text-emerald-300">Valor Aprovado</th>
-              <th className="px-3 py-2 font-bold text-right border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap text-rose-300">Valor Perdido</th>
-              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Prob.</th>
-              <th className="px-2.5 py-2 font-bold text-right border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap text-amber-300">Val. Ponderado</th>
-              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Comercial</th>
-              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 min-w-[180px]">Próxima Acção</th>
-              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 text-center whitespace-nowrap">Próx. Contacto</th>
-              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] dark:border-slate-800 min-w-[200px]">Observações</th>
-              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Dias</th>
-              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Classe</th>
-              <th className="px-2.5 py-2 font-bold text-center border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Prioridade</th>
-              <th className="px-2.5 py-2 font-bold text-center border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Estado CRM</th>
-              <th className="px-2.5 py-2 font-bold text-right border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">Meta Semanal</th>
-              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] dark:border-slate-800 whitespace-nowrap">% Meta</th>
+            <tr className="bg-[#1B365D] text-white border-b border-[#122442]">
+              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] whitespace-nowrap">Semana</th>
+              <th className="px-2 py-2 font-bold border-r border-[#2C4D75] text-center w-8">ID</th>
+              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] text-center whitespace-nowrap">Data envio</th>
+              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] whitespace-nowrap min-w-[140px]">Cliente</th>
+              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] min-w-[200px]">Serviço / Descrição</th>
+              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] whitespace-nowrap">Estado Proposta</th>
+              <th className="px-3 py-2 font-bold text-right border-r border-[#2C4D75] whitespace-nowrap">Valor Proposto</th>
+              <th className="px-3 py-2 font-bold text-right border-r border-[#2C4D75] whitespace-nowrap text-emerald-300">Valor Aprovado</th>
+              <th className="px-3 py-2 font-bold text-right border-r border-[#2C4D75] whitespace-nowrap text-rose-300">Valor Perdido</th>
+              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] whitespace-nowrap">Prob.</th>
+              <th className="px-2.5 py-2 font-bold text-right border-r border-[#2C4D75] whitespace-nowrap text-amber-300">Val. Ponderado</th>
+              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] whitespace-nowrap">Comercial</th>
+              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] min-w-[180px]">Próxima Acção</th>
+              <th className="px-2.5 py-2 font-bold border-r border-[#2C4D75] text-center whitespace-nowrap">Próx. Contacto</th>
+              <th className="px-3 py-2 font-bold border-r border-[#2C4D75] min-w-[200px]">Observações</th>
+              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] whitespace-nowrap">Dias</th>
+              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] whitespace-nowrap">Classe</th>
+              <th className="px-2.5 py-2 font-bold text-center border-r border-[#2C4D75] whitespace-nowrap">Prioridade</th>
+              <th className="px-2.5 py-2 font-bold text-center border-r border-[#2C4D75] whitespace-nowrap">Estado CRM</th>
+              <th className="px-2.5 py-2 font-bold text-right border-r border-[#2C4D75] whitespace-nowrap">Meta Semanal</th>
+              <th className="px-2 py-2 font-bold text-center border-r border-[#2C4D75] whitespace-nowrap">% Meta</th>
               <th className="px-3 py-2 font-bold text-center whitespace-nowrap bg-amber-600 text-white min-w-[80px]">Ações (CRUD)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-sans text-slate-900 dark:text-slate-100">
+          <tbody className="divide-y divide-gray-300 font-sans text-gray-900">
             {filteredPropostas.length === 0 ? (
               <tr>
-                <td colSpan={22} className="text-center py-10 text-slate-500 font-sans italic">
+                <td colSpan={22} className="text-center py-10 text-gray-500 font-sans italic">
                   Nenhuma proposta encontrada com os filtros selecionados.
                 </td>
               </tr>
@@ -589,8 +589,8 @@ export default function BaseDuasSemanasView({
               filteredPropostas.map((row, idx) => {
                 const semDisplay = row.semanaDisplay || normalizeSemana(row.semana, row.dataEnvio);
                 return (
-                  <tr key={`${semDisplay}-${row.id}-${row.cliente}-${idx}`} className="hover:bg-blue-50/60 dark:hover:bg-slate-800/80 transition-colors">
-                    <td className="px-2.5 py-1.5 font-medium text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                  <tr key={`${semDisplay}-${row.id}-${row.cliente}-${idx}`} className="hover:bg-blue-50/60 transition-colors">
+                    <td className="px-2.5 py-1.5 font-medium text-gray-700 border-r border-gray-300 whitespace-nowrap">
                       <span className={`inline-block px-1.5 py-0.5 rounded-xs text-[10px] font-bold ${
                         semDisplay === '27–31 Jul' 
                           ? 'bg-purple-100 text-purple-900 border border-purple-300' 

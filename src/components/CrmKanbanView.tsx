@@ -29,16 +29,7 @@ interface CrmKanbanViewProps {
 export default function CrmKanbanView({
   deals,
   comerciais = [],
-  refDate,
-  onRefDateChange,
-  selectedPeriod,
-  onPeriodTypeChange,
   selectedComercial: propSelectedComercial,
-  onComercialChange,
-  selectedEmpresa,
-  onEmpresaChange,
-  selectedProvincia,
-  onProvinciaChange,
   onOpenAddDeal,
   onMoveDeal,
   onDeleteDeal
@@ -124,7 +115,7 @@ export default function CrmKanbanView({
   const maxStageVal = Math.max(...stageData.map(s => s.val), 1);
 
   return (
-    <div className="space-y-6 h-full flex flex-col font-sans text-slate-900 dark:text-slate-100">
+    <div className="space-y-6 h-full flex flex-col font-sans">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (
@@ -145,7 +136,7 @@ export default function CrmKanbanView({
       )}
 
       {/* Top Main Header */}
-      <div className="flex flex-wrap justify-between items-center gap-4 bg-white dark:bg-slate-900/90 p-4 rounded-2xl shadow-xs border border-gray-100 dark:border-slate-800">
+      <div className="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-xs border border-gray-100">
         <div>
           <div className="flex items-center gap-2">
             <TrendingUp size={20} className="text-[#003366]" />
@@ -178,11 +169,14 @@ export default function CrmKanbanView({
           >
             <Plus size={16} /> Novo Negócio
           </button>
-           {/* Multi-Pipeline Funnel Switcher Bar */}
-      <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center justify-between gap-3 overflow-x-auto font-sans">
+        </div>
+      </div>
+
+      {/* Multi-Pipeline Funnel Switcher Bar */}
+      <div className="bg-white p-2.5 rounded-xl border border-gray-100 shadow-2xs flex items-center justify-between gap-3 overflow-x-auto">
         <div className="flex items-center gap-2">
-          <GitFork size={16} className="text-[#003366] dark:text-cyan-400 shrink-0 ml-1" />
-          <span className="text-xs font-extrabold text-[#003366] dark:text-cyan-300 uppercase tracking-wider shrink-0">Funil Ativo:</span>
+          <GitFork size={16} className="text-[#003366] shrink-0 ml-1" />
+          <span className="text-xs font-extrabold text-[#003366] uppercase tracking-wider shrink-0">Funil Ativo:</span>
           <div className="flex items-center gap-1.5 overflow-x-auto">
             {pipelines.map(pipe => {
               const isActive = activePipelineId === pipe.id;
@@ -192,8 +186,8 @@ export default function CrmKanbanView({
                   onClick={() => setActivePipelineId(pipe.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
                     isActive
-                      ? 'bg-[#003366] dark:bg-cyan-600 text-white shadow-xs'
-                      : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                      ? 'bg-[#003366] text-white shadow-xs'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
                   <span>{pipe.nome}</span>
@@ -204,117 +198,165 @@ export default function CrmKanbanView({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-lg border border-purple-100 dark:border-purple-800 shrink-0">
-          <BrainCircuit size={13} className="text-purple-600 dark:text-purple-400 animate-spin-slow" />
-          <span className="text-[10px] font-extrabold text-purple-900 dark:text-purple-200 uppercase">Helena IA Score Ativo</span>
+        <div className="flex items-center gap-1 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 shrink-0">
+          <BrainCircuit size={13} className="text-purple-600 animate-spin-slow" />
+          <span className="text-[10px] font-extrabold text-purple-900 uppercase">Helena IA Score Ativo</span>
         </div>
       </div>
 
       {/* Top Stat Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-sans">
-        <div className="bg-gradient-to-br from-blue-50/90 to-blue-100/50 dark:from-slate-900 dark:to-blue-950/60 p-3.5 rounded-2xl border border-blue-100 dark:border-blue-900/50 shadow-2xs">
-          <span className="text-[10px] font-black text-blue-900 dark:text-blue-300 uppercase tracking-wider block">Total em Carteira</span>
-          <span className="text-base md:text-lg font-black text-[#003366] dark:text-cyan-200 block mt-1">{formatCurrency(totalPipelineVal)}</span>
-          <span className="text-[10px] text-blue-700 dark:text-blue-400 font-bold block mt-0.5">{totalCount} propostas ativas</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-gradient-to-br from-blue-50/90 to-blue-100/50 p-3.5 rounded-2xl border border-blue-100 shadow-2xs">
+          <span className="text-[10px] font-black text-blue-900 uppercase tracking-wider block">Total em Carteira</span>
+          <span className="text-base md:text-lg font-black text-[#003366] block mt-1">{formatCurrency(totalPipelineVal)}</span>
+          <span className="text-[10px] text-blue-700 font-bold block mt-0.5">{totalCount} propostas ativas</span>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-50/90 to-emerald-100/50 dark:from-slate-900 dark:to-emerald-950/60 p-3.5 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 shadow-2xs">
-          <span className="text-[10px] font-black text-emerald-900 dark:text-emerald-300 uppercase tracking-wider block">Receita Estimada (Prob.)</span>
-          <span className="text-base md:text-lg font-black text-emerald-700 dark:text-emerald-300 block mt-1">{formatCurrency(weightedVal)}</span>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block mt-0.5">Probabilidade ponderada</span>
+        <div className="bg-gradient-to-br from-emerald-50/90 to-emerald-100/50 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
+          <span className="text-[10px] font-black text-emerald-900 uppercase tracking-wider block">Receita Estimada (Prob.)</span>
+          <span className="text-base md:text-lg font-black text-emerald-700 block mt-1">{formatCurrency(weightedVal)}</span>
+          <span className="text-[10px] text-emerald-600 font-bold block mt-0.5">Probabilidade ponderada</span>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50/90 to-purple-100/50 dark:from-slate-900 dark:to-purple-950/60 p-3.5 rounded-2xl border border-purple-100 dark:border-purple-900/50 shadow-2xs">
-          <span className="text-[10px] font-black text-purple-900 dark:text-purple-300 uppercase tracking-wider block">Propostas Recentes</span>
-          <span className="text-base md:text-lg font-black text-purple-700 dark:text-purple-300 block mt-1">{recentCount} criadas</span>
-          <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold block mt-0.5">Últimos 7 dias</span>
+        <div className="bg-gradient-to-br from-purple-50/90 to-purple-100/50 p-3.5 rounded-2xl border border-purple-100 shadow-2xs">
+          <span className="text-[10px] font-black text-purple-900 uppercase tracking-wider block">Valor Médio (Ticket)</span>
+          <span className="text-base md:text-lg font-black text-purple-800 block mt-1">{formatCurrency(avgTicket)}</span>
+          <span className="text-[10px] text-purple-600 font-bold block mt-0.5">Por cada negócio</span>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50/90 to-amber-100/50 dark:from-slate-900 dark:to-amber-950/60 p-3.5 rounded-2xl border border-amber-100 dark:border-amber-900/50 shadow-2xs">
-          <span className="text-[10px] font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider block">Em Risco de Estagnação</span>
-          <span className="text-base md:text-lg font-black text-amber-700 dark:text-amber-300 block mt-1">{stagnantCount} negócios</span>
-          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold block mt-0.5">Sem contacto &gt;14 dias</span>
+        <div className="bg-gradient-to-br from-amber-50/90 to-amber-100/50 p-3.5 rounded-2xl border border-amber-100 shadow-2xs">
+          <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">Concluídos / Ganho</span>
+          <span className="text-base md:text-lg font-black text-amber-800 block mt-1">
+            {formatCurrency(stageData.filter(s => s.id === 'fechado' || s.id === 'producao').reduce((a, b) => a + b.val, 0))}
+          </span>
+          <span className="text-[10px] text-amber-700 font-bold block mt-0.5">Negócios fechados com sucesso</span>
         </div>
       </div>
 
-      {/* Main Kanban Board Layout */}
-      <div className="flex-grow overflow-x-auto pb-4 custom-scrollbar font-sans">
-        <div className="flex gap-3 h-full items-start min-w-max">
-          {funnelStages.map(stage => {
-            const stageDeals = dealsByStage[stage.id] || [];
-            const stageSum = stageDeals.reduce((sum, d) => sum + parseVal(d.valor), 0);
+      {/* Search & Commercial Filter Bar */}
+      <div className="flex flex-wrap justify-between items-center gap-3 bg-white p-3 rounded-2xl shadow-xs border border-gray-100">
+        <div className="flex items-center gap-2 flex-wrap flex-grow">
+          <div className="relative flex-grow max-w-xs">
+            <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Pesquisar por cliente, título ou comercial..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#003366]"
+            />
+          </div>
 
-            return (
-              <div
-                key={stage.id}
-                className="min-w-[285px] w-[285px] bg-slate-100/80 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 flex flex-col gap-3 flex-shrink-0 h-full max-h-[calc(100vh-220px)] overflow-y-auto shadow-2xs"
-              >
-                
-                {/* Column Header with Step Indicator */}
-                <div className="bg-white dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-2xs space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-1.5">
-                      <span 
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 shadow-2xs"
-                        style={{ backgroundColor: stage.color }}
-                      >
-                        {stage.step}
-                      </span>
-                      <div>
-                        <h5 className="text-xs font-black text-slate-900 dark:text-slate-100 leading-tight">
-                          {stage.label.replace(/^\d+\.\s*/, '')}
-                        </h5>
-                        <span className="text-[9px] text-slate-400 font-semibold block">{stage.desc}</span>
-                      </div>
-                    </div>
+          <div className="flex items-center gap-1.5">
+            <Filter size={13} className="text-gray-400" />
+            <select
+              value={selectedComercial}
+              onChange={(e) => setSelectedComercial(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-700 focus:outline-none"
+            >
+              <option value="Todos">👤 Todos Comerciais</option>
+              {comerciais.map(u => (
+                <option key={u.id} value={u.nome}>{u.nome}</option>
+              ))}
+            </select>
+          </div>
 
-                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
-                      {stageDeals.length}
+          <div className="flex items-center gap-1.5">
+            <select
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-700 focus:outline-none"
+            >
+              <option value="Todas">⚡ Todas Prioridades</option>
+              <option value="Alta">🔴 Alta</option>
+              <option value="Média">🟡 Média</option>
+              <option value="Baixa">⚪ Baixa</option>
+            </select>
+          </div>
+        </div>
+
+        <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-xl">
+          {filteredDeals.length} {filteredDeals.length === 1 ? 'negócio em exibição' : 'negócios em exibição'}
+        </span>
+      </div>
+
+      {/* PRIMARY CRM KANBAN BOARD (At the Top) */}
+      <div className="flex-grow flex gap-3.5 overflow-x-auto pb-4 items-start select-none min-h-[480px]">
+        {stages.map((stage) => {
+          const stageDeals = filteredDeals.filter(d => d.etapa === stage.id);
+          const stageSum = stageDeals.reduce((sum, d) => sum + (d.valor || 0), 0);
+
+          return (
+            <div
+              key={stage.id}
+              className="min-w-[285px] w-[285px] bg-gray-50/90 border border-gray-200/80 rounded-2xl p-3 flex flex-col gap-3 flex-shrink-0 h-full max-h-[calc(100vh-220px)] overflow-y-auto shadow-2xs"
+            >
+              
+              {/* Column Header with Step Indicator */}
+              <div className="bg-white p-2.5 rounded-xl border border-gray-200/80 sticky top-0 z-10 shadow-2xs space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <span 
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 shadow-2xs"
+                      style={{ backgroundColor: stage.color }}
+                    >
+                      {stage.step}
                     </span>
+                    <div>
+                      <h5 className="text-xs font-black text-gray-900 leading-tight">
+                        {stage.label.replace(/^\d+\.\s*/, '')}
+                      </h5>
+                      <span className="text-[9px] text-gray-400 font-semibold block">{stage.desc}</span>
+                    </div>
                   </div>
 
-                  <div className="flex justify-between items-center pt-1.5 border-t border-slate-100 dark:border-slate-800 text-[10px] font-bold">
-                    <span className="text-slate-400 uppercase">Subtotal:</span>
-                    <span className="text-[#003366] dark:text-cyan-300 font-black">{formatCurrency(stageSum)}</span>
-                  </div>
+                  <span className="bg-gray-100 text-gray-700 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-gray-200">
+                    {stageDeals.length}
+                  </span>
                 </div>
 
-                {/* Deal Cards List */}
-                <div className="space-y-3 flex-grow overflow-y-auto pr-0.5">
-                  {stageDeals.length === 0 ? (
-                    <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl py-10 text-center text-[10px] font-bold text-slate-400 bg-white/60 dark:bg-slate-950/40">
-                      Nenhum negócio nesta fase
-                    </div>
-                  ) : (
-                    stageDeals.map(deal => {
-                      const isHigh = deal.prioridade === 'Alta';
-                      const priCls = isHigh 
-                        ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 font-black' 
-                        : deal.prioridade === 'Média' 
-                        ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 font-bold' 
-                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 font-medium';
+                <div className="flex justify-between items-center pt-1.5 border-t border-gray-100 text-[10px] font-bold">
+                  <span className="text-gray-400 uppercase">Subtotal:</span>
+                  <span className="text-[#003366] font-black">{formatCurrency(stageSum)}</span>
+                </div>
+              </div>
 
-                      // Find assigned commercial user object
-                      const commUser = comerciais.find(u => 
-                        u.nome.toLowerCase() === (deal.comercialNome || '').toLowerCase()
-                      );
-                      const phone = commUser?.whatsappNumero || commUser?.telefone || '244900000000';
+              {/* Deal Cards List */}
+              <div className="space-y-3 flex-grow overflow-y-auto pr-0.5">
+                {stageDeals.length === 0 ? (
+                  <div className="border border-dashed border-gray-200 rounded-xl py-10 text-center text-[10px] font-bold text-gray-400 bg-white/60">
+                    Nenhum negócio nesta fase
+                  </div>
+                ) : (
+                  stageDeals.map(deal => {
+                    const isHigh = deal.prioridade === 'Alta';
+                    const priCls = isHigh 
+                      ? 'bg-red-50 text-red-700 border-red-200 font-black' 
+                      : deal.prioridade === 'Média' 
+                      ? 'bg-amber-50 text-amber-700 border-amber-200 font-bold' 
+                      : 'bg-gray-50 text-gray-600 border-gray-200 font-medium';
 
-                      return (
-                        <div
-                          key={deal.id}
-                          className="bg-white dark:bg-slate-950 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition space-y-2.5 text-left relative group border-l-4"
-                          style={{ borderLeftColor: stage.color }}
-                        >
-                          {/* Title & Priority & Delete */}
-                          <div className="flex justify-between items-start gap-1">
-                            <h6 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 leading-snug line-clamp-2" title={deal.titulo}>
-                              {deal.titulo}
-                            </h6>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider border ${priCls}`}>
-                                {deal.prioridade || 'Normal'}
-                              </span>
+                    // Find assigned commercial user object
+                    const commUser = comerciais.find(u => 
+                      u.nome.toLowerCase() === (deal.comercialNome || '').toLowerCase()
+                    );
+                    const phone = commUser?.whatsappNumero || commUser?.telefone || '244900000000';
+
+                    return (
+                      <div
+                        key={deal.id}
+                        className="bg-white rounded-xl p-3 border border-gray-200/90 shadow-xs hover:shadow-md transition space-y-2.5 text-left relative group border-l-4"
+                        style={{ borderLeftColor: stage.color }}
+                      >
+                        {/* Title & Priority & Delete */}
+                        <div className="flex justify-between items-start gap-1">
+                          <h6 className="text-xs font-extrabold text-gray-900 leading-snug line-clamp-2" title={deal.titulo}>
+                            {deal.titulo}
+                          </h6>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider border ${priCls}`}>
+                              {deal.prioridade || 'Normal'}
+                            </span>
                             {onDeleteDeal && (
                               <button
                                 onClick={() => {

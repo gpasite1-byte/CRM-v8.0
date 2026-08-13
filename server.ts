@@ -96,6 +96,15 @@ try {
 // CRM Data Storage File
 const CRM_DB_FILE = path.join(process.cwd(), "crm-db.json");
 
+// Helper to get Excel Documents directory (supports 'Documentos' as primary and 'Ducumentos' as fallback)
+function getExcelDocsDir(): string {
+  const primary = path.join(process.cwd(), "Documentos");
+  const fallback = path.join(process.cwd(), "Ducumentos");
+  if (fs.existsSync(primary)) return primary;
+  if (fs.existsSync(fallback)) return fallback;
+  return primary;
+}
+
 function isTestDocument(fileName: string): boolean {
   if (!fileName) return false;
   const lower = fileName.toLowerCase();
@@ -273,14 +282,14 @@ function getCrmData() {
   return initialData;
 }
 
-// Auto-import handler for Excel files in ./Ducumentos
+// Auto-import handler for Excel files in ./Documentos (or ./Ducumentos)
 function importExcelFromDucumentos() {
   try {
-    const docsDir = path.join(process.cwd(), "Ducumentos");
-    if (!fs.existsSync(docsDir)) return { success: false, message: "Pasta Ducumentos não encontrada." };
+    const docsDir = getExcelDocsDir();
+    if (!fs.existsSync(docsDir)) return { success: false, message: "Pasta Documentos não encontrada." };
 
     const files = fs.readdirSync(docsDir).filter(f => f.endsWith(".xlsx") || f.endsWith(".xls"));
-    if (files.length === 0) return { success: false, message: "Nenhum ficheiro Excel encontrado em Ducumentos." };
+    if (files.length === 0) return { success: false, message: "Nenhum ficheiro Excel encontrado em Documentos." };
 
     const currentData = getCrmData();
     let deals = currentData.deals || [];
@@ -478,8 +487,8 @@ app.all("/api/import-excel", (req, res) => {
 // GET debug excel contents
 app.get("/api/debug-excel", (req, res) => {
   try {
-    const docsDir = path.join(process.cwd(), "Ducumentos");
-    const files = fs.readdirSync(docsDir).filter(f => f.endsWith(".xlsx") || f.endsWith(".xls"));
+    const docsDir = getExcelDocsDir();
+    const files = fs.existsSync(docsDir) ? fs.readdirSync(docsDir).filter(f => f.endsWith(".xlsx") || f.endsWith(".xls")) : [];
     const report: any[] = [];
 
     files.forEach(file => {
@@ -509,8 +518,8 @@ app.get("/api/debug-excel", (req, res) => {
 // GET dump raw excel rows
 app.get("/api/dump-excel", (req, res) => {
   try {
-    const docsDir = path.join(process.cwd(), "Ducumentos");
-    const files = fs.readdirSync(docsDir).filter(f => f.endsWith(".xlsx") || f.endsWith(".xls"));
+    const docsDir = getExcelDocsDir();
+    const files = fs.existsSync(docsDir) ? fs.readdirSync(docsDir).filter(f => f.endsWith(".xlsx") || f.endsWith(".xls")) : [];
     const fullLog: any = {};
 
     files.forEach(file => {
@@ -2416,9 +2425,9 @@ function readExcelDirectory(dirPath: string): { file: string; sheetName: string;
 // GET /api/parse-documents — Preview raw Excel structure (for debugging)
 app.get("/api/parse-documents", (req, res) => {
   try {
-    const docsDir = path.join(process.cwd(), "Ducumentos");
+    const docsDir = getExcelDocsDir();
     if (!fs.existsSync(docsDir)) {
-      return res.status(404).json({ error: "Pasta Ducumentos não encontrada", cwd: process.cwd() });
+      return res.status(404).json({ error: "Pasta Documentos não encontrada", cwd: process.cwd() });
     }
     const sheets = readExcelDirectory(docsDir);
     const summary = sheets.map(s => ({
@@ -2435,12 +2444,12 @@ app.get("/api/parse-documents", (req, res) => {
   }
 });
 
-// POST /api/import-excel — Full import from Ducumentos folder into crm-db.json
+// POST /api/import-excel — Full import from Documentos folder into crm-db.json
 app.post("/api/import-excel", (req, res) => {
   try {
-    const docsDir = path.join(process.cwd(), "Ducumentos");
+    const docsDir = getExcelDocsDir();
     if (!fs.existsSync(docsDir)) {
-      return res.status(404).json({ error: "Pasta Ducumentos não encontrada", cwd: process.cwd() });
+      return res.status(404).json({ error: "Pasta Documentos não encontrada", cwd: process.cwd() });
     }
 
     const sheets = readExcelDirectory(docsDir);
@@ -2815,136 +2824,11 @@ function processExcelToImport(allSheetData: { file: string; sheetName: string; r
   return { deals, clients, visits, comerciais, historicoSemanas };
 }
 
-// GET /api/parse-documents — Preview raw Excel structure
-app.get("/api/parse-documents", (req, res) => {
-  try {
-    const docsDir = path.join(process.cwd(), "Ducumentos");
-    if (!fs.existsSync(docsDir)) {
-      return res.status(404).json({ error: "Pasta Ducumentos não encontrada" });
-    }
-    const files = fs.readdirSync(docsDir).filter((f: string) => f.endsWith(".xlsx"));
-    const summary: any[] = [];
-    files.forEach((file: string) => {
-      const wb = XLSX.readFile(path.join(docsDir, file));
-      wb.SheetNames.forEach((sheetName: string) => {
-        const ws = wb.Sheets[sheetName];
-        const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        const objRows: any[] = XLSX.utils.sheet_to_json(ws);
-        summary.push({ file, sheetName, totalRows: rawRows.length, sampleRaw: rawRows.slice(0, 12), sampleObjects: objRows.slice(0, 12) });
-      });
-    });
-    return res.json({ success: true, filesCount: files.length, summary });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/import-excel — Full import from Ducumentos folder into crm-db.json
-app.post("/api/import-excel", (req, res) => {
-  try {
-    const docsDir = path.join(process.cwd(), "Ducumentos");
-    if (!fs.existsSync(docsDir)) {
-      return res.status(404).json({ error: "Pasta Ducumentos não encontrada" });
-    }
-
-    const files = fs.readdirSync(docsDir).filter((f: string) => f.endsWith(".xlsx"));
-    if (files.length === 0) {
-      return res.status(400).json({ error: "Nenhum ficheiro .xlsx encontrado em Ducumentos" });
-    }
-
-    // Collect all sheet data
-    const allSheetData: { file: string; sheetName: string; rows: any[] }[] = [];
-    files.forEach((file: string) => {
-      const wb = XLSX.readFile(path.join(docsDir, file));
-      wb.SheetNames.forEach((sheetName: string) => {
-        const ws = wb.Sheets[sheetName];
-        const rows: any[] = XLSX.utils.sheet_to_json(ws);
-        if (rows.length > 0) {
-          allSheetData.push({ file, sheetName, rows });
-        }
-      });
-    });
-
-    const { deals: newDeals, clients: newClients, comerciais: newComerciais, historicoSemanas: newSemanas } = processExcelToImport(allSheetData);
-
-    // Load existing CRM data
-    const data = getCrmData();
-    const existingDeals: any[] = Array.isArray(data.deals) ? data.deals : [];
-    const existingClients: any[] = Array.isArray(data.clients) ? data.clients : [];
-    const existingComerciais: any[] = Array.isArray(data.comerciais) ? data.comerciais : [];
-    const existingSemanas: any[] = Array.isArray(data.historicoSemanas) ? data.historicoSemanas : [];
-
-    // Merge – only add what's not already there
-    let dealsAdded = 0, clientsAdded = 0, comAdded = 0, semanasAdded = 0;
-
-    newDeals.forEach(d => {
-      const exists = existingDeals.some(e =>
-        e.clienteNome?.toLowerCase().trim() === d.clienteNome?.toLowerCase().trim() &&
-        e.titulo?.toLowerCase().trim() === d.titulo?.toLowerCase().trim()
-      );
-      if (!exists) { existingDeals.push(d); dealsAdded++; }
-    });
-
-    newClients.forEach(c => {
-      const exists = existingClients.some(e =>
-        e.empresa?.toLowerCase().trim() === c.empresa?.toLowerCase().trim()
-      );
-      if (!exists) { existingClients.push(c); clientsAdded++; }
-    });
-
-    newComerciais.forEach(c => {
-      const exists = existingComerciais.some(e =>
-        e.nome?.toLowerCase().trim() === c.nome?.toLowerCase().trim()
-      );
-      if (!exists) { existingComerciais.push(c); comAdded++; }
-    });
-
-    newSemanas.forEach(s => {
-      const exists = existingSemanas.some(e =>
-        e.rotulo?.toLowerCase().trim() === s.rotulo?.toLowerCase().trim()
-      );
-      if (!exists) { existingSemanas.push(s); semanasAdded++; }
-    });
-
-    // Save updated data
-    data.deals = existingDeals;
-    data.clients = existingClients;
-    data.comerciais = existingComerciais;
-    data.historicoSemanas = existingSemanas;
-
-    fs.writeFileSync(CRM_DB_FILE, JSON.stringify(data, null, 2), "utf-8");
-
-    // Broadcast update to all connected clients
-    broadcastWS({ type: 'crm-data-updated', source: 'excel-import' });
-
-    return res.json({
-      success: true,
-      message: `Sincronização concluída com sucesso! Processados ${files.length} ficheiros Excel. Adicionados ${dealsAdded} novos negócios e ${clientsAdded} novos clientes no CRM sem apagar dados anteriores.`,
-      filesProcessed: files.length,
-      sheetsProcessed: allSheetData.length,
-      imported: {
-        deals: dealsAdded,
-        clients: clientsAdded,
-        comerciais: comAdded,
-        historicoSemanas: semanasAdded
-      },
-      totals: {
-        deals: existingDeals.length,
-        clients: existingClients.length,
-        comerciais: existingComerciais.length
-      }
-    });
-  } catch (err: any) {
-    console.error('Excel import error:', err);
-    return res.status(500).json({ error: err.message });
-  }
-});
-
 // Vite and static build pipeline initialization
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true, hmr: { server }, ws: false, allowedHosts: true },
+      server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);

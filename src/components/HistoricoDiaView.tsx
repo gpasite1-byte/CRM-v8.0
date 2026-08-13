@@ -48,16 +48,7 @@ export default function HistoricoDiaView({
   operacoesLog = [],
   loggedUser,
   comerciais = [],
-  refDate,
-  onRefDateChange,
-  selectedPeriod,
-  onPeriodTypeChange,
   selectedComercial: propSelectedComercial,
-  onComercialChange,
-  selectedEmpresa,
-  onEmpresaChange,
-  selectedProvincia,
-  onProvinciaChange,
   onRevertOperation,
   onClearOperacoesLog
 }: HistoricoDiaViewProps) {
@@ -213,24 +204,24 @@ export default function HistoricoDiaView({
   // If user is not Admin, show explicit restricted access card
   if (!isAdmin) {
     return (
-      <div className="p-4 md:p-8 max-w-4xl mx-auto font-sans text-slate-900 dark:text-slate-100">
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-900/50 shadow-2xl p-8 text-center space-y-5 animate-fade-in">
-          <div className="w-20 h-20 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto shadow-inner">
+      <div className="p-6 md:p-10 max-w-4xl mx-auto font-sans">
+        <div className="bg-white rounded-2xl border border-rose-200 shadow-xl p-8 text-center space-y-5 animate-fade-in">
+          <div className="w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
             <Lock size={40} />
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
               Acesso Restrito: Histórico do Dia
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm text-gray-600 max-w-lg mx-auto leading-relaxed">
               O módulo <strong>Histórico do Dia (Auditoria Geral)</strong> é de acesso exclusivo para os <strong>Administradores do CRM GPA Angola</strong>.
             </p>
           </div>
 
-          <div className="p-4 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-2xl text-left text-xs text-amber-900 dark:text-amber-200 font-medium space-y-1.5 max-w-md mx-auto">
-            <p className="font-bold flex items-center gap-1.5 text-amber-950 dark:text-amber-100">
-              <ShieldCheck size={16} className="text-amber-600 dark:text-amber-400" />
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 font-medium space-y-1.5 max-w-md mx-auto">
+            <p className="font-bold flex items-center gap-1.5 text-amber-950">
+              <ShieldCheck size={16} className="text-amber-600" />
               Política de Segurança & Privacidade:
             </p>
             <p>
@@ -239,7 +230,7 @@ export default function HistoricoDiaView({
           </div>
 
           <div className="pt-2">
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700">
+            <span className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 bg-gray-100 px-4 py-2 rounded-full">
               Utilizador Atual: <strong>{loggedUser?.nome || 'Comercial'}</strong> ({loggedUser?.perfil || 'Comercial'})
             </span>
           </div>
@@ -249,7 +240,7 @@ export default function HistoricoDiaView({
   }
 
   return (
-    <div className="p-2 sm:p-4 space-y-6 font-sans max-w-7xl mx-auto text-slate-900 dark:text-slate-100">
+    <div className="p-4 md:p-8 space-y-6 font-sans max-w-7xl mx-auto">
       
       {/* GLOBAL PERIOD BAR SYNCHRONIZED ACROSS ALL 13 VIEWS */}
       {refDate && onRefDateChange && selectedPeriod && onPeriodTypeChange && (
@@ -317,77 +308,77 @@ export default function HistoricoDiaView({
       </div>
 
       {/* KPI Cards for the Selected Day */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 font-sans">
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-gray-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Operações</span>
-            <Activity size={16} className="text-blue-600 dark:text-blue-400" />
+            <Activity size={16} className="text-blue-600" />
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-slate-100">{metrics.total}</div>
-          <span className="text-[10px] font-medium text-slate-400">Registo global do dia</span>
+          <div className="text-2xl font-black text-gray-900">{metrics.total}</div>
+          <span className="text-[10px] font-medium text-gray-400">Registo global do dia</span>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-gray-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Comerciais Ativos</span>
-            <UserCheck size={16} className="text-emerald-600 dark:text-emerald-400" />
+            <UserCheck size={16} className="text-emerald-600" />
           </div>
-          <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">{metrics.activeComerciais}</div>
-          <span className="text-[10px] font-medium text-slate-400">Usuários que operaram</span>
+          <div className="text-2xl font-black text-emerald-700">{metrics.activeComerciais}</div>
+          <span className="text-[10px] font-medium text-gray-400">Usuários que operaram</span>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-gray-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Novos Registos</span>
-            <PlusCircle size={16} className="text-blue-600 dark:text-blue-400" />
+            <PlusCircle size={16} className="text-blue-600" />
           </div>
-          <div className="text-2xl font-black text-blue-700 dark:text-blue-300">{metrics.criacoes}</div>
-          <span className="text-[10px] font-medium text-slate-400">Propostas & Clientes</span>
+          <div className="text-2xl font-black text-blue-700">{metrics.criacoes}</div>
+          <span className="text-[10px] font-medium text-gray-400">Propostas & Clientes</span>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-gray-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Edições / Alterações</span>
-            <Edit3 size={16} className="text-purple-600 dark:text-purple-400" />
+            <Edit3 size={16} className="text-purple-600" />
           </div>
-          <div className="text-2xl font-black text-purple-700 dark:text-purple-300">{metrics.edicoes}</div>
-          <span className="text-[10px] font-medium text-slate-400">Atualizações efetuadas</span>
+          <div className="text-2xl font-black text-purple-700">{metrics.edicoes}</div>
+          <span className="text-[10px] font-medium text-gray-400">Atualizações efetuadas</span>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-gray-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Exclusões</span>
-            <XCircle size={16} className="text-rose-600 dark:text-rose-400" />
+            <XCircle size={16} className="text-rose-600" />
           </div>
-          <div className="text-2xl font-black text-rose-700 dark:text-rose-300">{metrics.exclusoes}</div>
-          <span className="text-[10px] font-medium text-slate-400">Itens apagados</span>
+          <div className="text-2xl font-black text-rose-700">{metrics.exclusoes}</div>
+          <span className="text-[10px] font-medium text-gray-400">Itens apagados</span>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-gray-500">
             <span className="text-[11px] font-bold uppercase tracking-wider">Reversões</span>
-            <RotateCcw size={16} className="text-amber-600 dark:text-amber-400" />
+            <RotateCcw size={16} className="text-amber-600" />
           </div>
-          <div className="text-2xl font-black text-amber-700 dark:text-amber-300">{metrics.revertidos}</div>
-          <span className="text-[10px] font-medium text-slate-400">Acções anuladas</span>
+          <div className="text-2xl font-black text-amber-700">{metrics.revertidos}</div>
+          <span className="text-[10px] font-medium text-gray-400">Acções anuladas</span>
         </div>
       </div>
 
       {/* Filter Control Section */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 font-sans">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-3">
         {/* Date Presets Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
           <div className="flex items-center gap-1.5 overflow-x-auto">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 mr-1">
-              <Calendar size={14} className="text-blue-600 dark:text-cyan-400" /> Data:
+            <span className="text-xs font-bold text-gray-700 flex items-center gap-1 mr-1">
+              <Calendar size={14} className="text-blue-600" /> Data:
             </span>
             
             <button
               onClick={() => handleDateModeChange('hoje')}
               className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 dateMode === 'hoje'
-                  ? 'bg-[#003366] dark:bg-cyan-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-[#003366] text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Hoje ({todayStr.split('-').reverse().join('/')})
@@ -397,8 +388,8 @@ export default function HistoricoDiaView({
               onClick={() => handleDateModeChange('ontem')}
               className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 dateMode === 'ontem'
-                  ? 'bg-[#003366] dark:bg-cyan-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-[#003366] text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Ontem
@@ -408,8 +399,8 @@ export default function HistoricoDiaView({
               onClick={() => handleDateModeChange('7dias')}
               className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 dateMode === '7dias'
-                  ? 'bg-[#003366] dark:bg-cyan-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-[#003366] text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Últimos 7 Dias
@@ -419,8 +410,8 @@ export default function HistoricoDiaView({
               onClick={() => handleDateModeChange('todas')}
               className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                 dateMode === 'todas'
-                  ? 'bg-[#003366] dark:bg-cyan-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-[#003366] text-white shadow-xs'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Todas as Datas
@@ -428,7 +419,7 @@ export default function HistoricoDiaView({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Data Específica:</span>
+            <span className="text-xs text-gray-500 font-medium">Data Específica:</span>
             <input
               type="date"
               value={selectedDate}
@@ -436,7 +427,7 @@ export default function HistoricoDiaView({
                 setSelectedDate(e.target.value);
                 setDateMode('custom');
               }}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="bg-gray-50 border border-gray-300 rounded-lg px-2.5 py-1 text-xs font-bold text-gray-800 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
@@ -445,13 +436,13 @@ export default function HistoricoDiaView({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
           {/* Search Box */}
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Pesquisar por cliente, proposta, utilizador ou acção..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500"
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:outline-none focus:border-blue-500 focus:bg-white"
             />
           </div>
 
@@ -460,7 +451,7 @@ export default function HistoricoDiaView({
             <select
               value={selectedComercial}
               onChange={(e) => setSelectedComercial(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none focus:border-blue-500"
             >
               <option value="todos">👤 Todos os Comerciais ({listComerciaisOptions.length})</option>
               {listComerciaisOptions.map(nome => (
@@ -474,7 +465,7 @@ export default function HistoricoDiaView({
             <select
               value={selectedTipo}
               onChange={(e) => setSelectedTipo(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none focus:border-blue-500"
             >
               <option value="todos">⚡ Todos os Tipos de Acção</option>
               <option value="criacao">➕ Criação (Adicionar)</option>
@@ -491,7 +482,7 @@ export default function HistoricoDiaView({
             <select
               value={selectedEntidade}
               onChange={(e) => setSelectedEntidade(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none focus:border-blue-500"
             >
               <option value="todos">📦 Todos os Módulos / Entidades</option>
               <option value="deal">📄 Propostas / Deals</option>
@@ -507,24 +498,24 @@ export default function HistoricoDiaView({
       </div>
 
       {/* Main Table List */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden font-sans">
-        <div className="p-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+        <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock size={16} className="text-blue-600 dark:text-cyan-400" />
-            <h3 className="text-xs font-black uppercase tracking-wide text-[#003366] dark:text-cyan-300">
+            <Clock size={16} className="text-blue-600" />
+            <h3 className="text-xs font-black uppercase tracking-wide text-[#003366]">
               Registos de Auditoria em Tempo Real ({filteredLogs.length})
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+          <span className="text-[11px] font-bold text-gray-500">
             Apenas acessível a Administradores
           </span>
         </div>
 
         {filteredLogs.length === 0 ? (
           <div className="p-12 text-center space-y-2">
-            <History size={36} className="mx-auto text-slate-300 dark:text-slate-700" />
-            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhum registo de operação encontrado</p>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <History size={36} className="mx-auto text-gray-300" />
+            <p className="text-sm font-bold text-gray-700">Nenhum registo de operação encontrado</p>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">
               Tente alterar os filtros de data, comercial ou palavra-chave de pesquisa para visualizar mais auditorias.
             </p>
           </div>

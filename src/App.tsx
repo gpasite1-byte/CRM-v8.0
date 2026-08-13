@@ -11,7 +11,7 @@ import {
 } from './data';
 import { Camera } from 'lucide-react';
 import { processInvoiceAutomation } from './lib/invoiceAutomation';
-import bgVideo from './assets/videos/Prompt_Direto_e_Suave_Reco.mp4';
+const bgVideo = '/videos/Prompt_Direto_e_Suave_Reco.mp4';
 
 function getCurrentMonthLabel(): string {
   const now = new Date();
@@ -60,6 +60,7 @@ import { saveFileToFirestore, deleteFileFromFirestore, isSupabaseConfigured, con
 import { dispatchRoleNotification } from './lib/notifications';
 import { sanitizeAndDeduplicateUsers, mergeWithInitialComerciais } from './lib/userUtils';
 import { getCurrentWeeks } from './utils/weekUtils';
+import { PeriodType } from './utils/periodEngine';
 
 export default function App() {
   // Initialize stored typography font on startup
@@ -74,17 +75,9 @@ export default function App() {
     return loadFromLocalStorage<Usuario | null>('gpa_logged_user', null);
   });
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
-    const saved = loadFromLocalStorage<'dark' | 'light'>('gpa_theme_mode', 'light');
-    return saved || 'light';
+    const saved = loadFromLocalStorage<'dark' | 'light'>('gpa_theme_mode', 'dark');
+    return saved || 'dark';
   });
-
-  useEffect(() => {
-    if (!localStorage.getItem('gpa_theme_migrated_v8')) {
-      setThemeMode('light');
-      localStorage.setItem('gpa_theme_mode', 'light');
-      localStorage.setItem('gpa_theme_migrated_v8', 'true');
-    }
-  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', themeMode);
@@ -1080,8 +1073,7 @@ export default function App() {
     };
 
     fetchGlobalMessages();
-    // Poll every 10 seconds to save CPU & network bandwidth while keeping real-time responsiveness
-    const interval = setInterval(fetchGlobalMessages, 10000);
+    const interval = setInterval(fetchGlobalMessages, 2000);
     return () => clearInterval(interval);
   }, [loggedUser, activeTab]);
 
@@ -2358,12 +2350,7 @@ export default function App() {
           muted 
           playsInline 
           preload="auto"
-          ref={(el) => { if (el && el.paused) el.play().catch(() => {}); }}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${
-            themeMode === 'dark' 
-              ? 'opacity-35 mix-blend-screen' 
-              : 'opacity-20 mix-blend-multiply filter contrast-125'
-          }`}
+          className="w-full h-full object-cover opacity-15 mix-blend-screen"
         >
           <source src={bgVideo} type="video/mp4" />
           <source src="/videos/Prompt_Direto_e_Suave_Reco.mp4" type="video/mp4" />
@@ -2417,7 +2404,7 @@ export default function App() {
       />
 
       {/* Main viewport area */}
-      <div className={`flex-grow flex flex-col overflow-hidden relative z-10 ${themeMode === 'dark' ? 'bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),linear-gradient(135deg,rgba(2,6,23,0.96),rgba(10,16,35,0.92))] text-slate-100' : 'bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.10),transparent_25%),linear-gradient(135deg,#f8fafc_0%,#eef4ff_60%,#f8fafc_100%)] text-slate-900'}`}>
+      <div className={`flex-grow flex flex-col overflow-hidden relative z-10 ${themeMode === 'dark' ? 'bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),linear-gradient(135deg,rgba(2,6,23,0.96),rgba(10,16,35,0.92))]' : 'bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.10),transparent_25%),linear-gradient(135deg,#f8fafc_0%,#eef4ff_60%,#f8fafc_100%)]'}`}>
         
         {/* Structural Topbar */}
         <TopBar

@@ -1,40 +1,31 @@
 @echo off
 chcp 65001 >nul
-title PUBLICAR NO GITHUB
-echo ====================================================================
-echo   RESOLVENDO PROBLEMA DO GITHUB E ENVIANDO PROJETO
-echo ====================================================================
+title ENVIAR PARA O GITHUB - GPA ANGOLA CRM v8.0 PRO
+echo ===================================================
+echo   ENVIANDO VERSAO ATUAL PARA O GITHUB / VERCEL
+echo ===================================================
 echo.
-echo 0. Sincronizando pasta de videos estaticos...
+cd /d "%~dp0"
+
 if not exist "public\videos" mkdir "public\videos"
-if not exist "src\assets\videos" mkdir "src\assets\videos"
 copy /y "videos\*" "public\videos\" >nul 2>&1
+
+if not exist "src\assets\videos" mkdir "src\assets\videos"
 copy /y "videos\*" "src\assets\videos\" >nul 2>&1
 
 echo.
-echo 1. Adicionando as alteracoes...
+echo Adicionando alterações ao git...
 git add .
 
-echo.
-echo 2. Salvando as alteracoes localmente...
-git commit -m "GPA Angola CRM v8.0 PRO - Fix video background and Vercel static rewrites"
+echo Criando commit da versão atual...
+git commit -m "GPA Angola CRM v8.0 PRO - Atualizacao e otimizacao de ficheiros"
+
+echo Enviando a versão para o GitHub (Vercel)...
+git push origin main
 
 echo.
-echo 3. Garantindo que a branch principal e a 'main'...
-git branch -M main
-
-echo.
-echo 4. Configurando a URL exata do seu repositorio...
-git remote remove origin >nul 2>&1
-git remote add origin https://github.com/gpasite1-byte/CRM-v8.0.git
-
-echo.
-echo 5. Enviando o codigo (isso pode demorar uns segundos)...
-git push -u origin main --force
-
-echo.
-echo ====================================================================
-echo   CONCLUIDO! VERIFIQUE SE O SEU CODIGO APARECE NO GITHUB.
-echo ====================================================================
+echo ===================================================
+echo ENVIADO COM SUCESSO! O VERCEL VAI ATUALIZAR AGORA!
+echo ===================================================
 pause
 

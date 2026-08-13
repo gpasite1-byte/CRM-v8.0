@@ -34,11 +34,8 @@ export default defineConfig(() => {
       },
     },
     server: {
-      host: '0.0.0.0',
-      allowedHosts: true,
-      // Disable standalone HMR WebSocket server on port 24678
+      // Disable HMR auto-reloads to prevent page flickering and auto-refreshes while user is typing
       hmr: false,
-      ws: false,
       strictPort: false,
     },
   };
