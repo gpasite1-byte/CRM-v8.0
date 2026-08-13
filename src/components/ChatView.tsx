@@ -816,25 +816,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     };
   }, []);
 
-  // Auto attach and play video/audio streams when active call modal mounts
-  useEffect(() => {
-    if (activeCall) {
-      if (remoteStreamRef.current) {
-        if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
-          remoteVideoRef.current.srcObject = remoteStreamRef.current;
-          remoteVideoRef.current.play().catch(e => console.warn('Remote video play:', e));
-        }
-        if (remoteAudioRef.current && remoteAudioRef.current.srcObject !== remoteStreamRef.current) {
-          remoteAudioRef.current.srcObject = remoteStreamRef.current;
-          remoteAudioRef.current.play().catch(e => console.warn('Remote audio play:', e));
-        }
-      }
-      if (mediaStreamRef.current && localVideoRef.current && localVideoRef.current.srcObject !== mediaStreamRef.current) {
-        localVideoRef.current.srcObject = mediaStreamRef.current;
-        localVideoRef.current.play().catch(e => console.warn('Local video play:', e));
-      }
-    }
-  }, [activeCall]);
+
 
   // Last read timestamp per channel / DM to track unread messages
   const [lastReadTimes, setLastReadTimes] = useState<Record<string, number>>(() => {
