@@ -207,8 +207,8 @@ export default function BaseDuasSemanasView({
         if (!dCliente) return;
 
         const exists = list.some(p => 
-          (p.cliente || '').toLowerCase().trim() === dCliente.toLowerCase() && 
-          (p.gestorComercial || '').toLowerCase().trim() === dComercial.toLowerCase()
+          String(p.cliente || '').toLowerCase().trim() === String(dCliente).toLowerCase() && 
+          String(p.gestorComercial || '').toLowerCase().trim() === String(dComercial).toLowerCase()
         );
 
         if (!exists) {
