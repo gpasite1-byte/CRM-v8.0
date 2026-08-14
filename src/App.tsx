@@ -656,7 +656,6 @@ export default function App() {
       }
 
       if (dataToUse) {
-        updateLastSavedPayloadRef(dataToUse);
         if (dataToUse.comerciais && dataToUse.comerciais.length > 0) {
           const mergedComerciais = mergeWithInitialComerciais(dataToUse.comerciais);
           setComerciais(mergedComerciais);
@@ -679,13 +678,14 @@ export default function App() {
         }
         if (dataToUse.crmName) setCrmName(dataToUse.crmName);
         if (dataToUse.telSede) setTelSede(dataToUse.telSede);
+
+        updateLastSavedPayloadRef(dataToUse);
       }
       
-      // Delay enabling saves by 1 second to ensure state is fully applied 
-      // and prevent immediate save of empty/old local storage data over the cloud state
+      // Enable database persistence only AFTER full cloud hydration to protect custom photos & passwords
       setTimeout(() => {
         setDbLoaded(true);
-      }, 1000);
+      }, 1500);
     });
 
     // Real-Time Firestore Cloud Database Synchronization
