@@ -55,8 +55,15 @@ import { ExcelImportModal } from './components/ExcelImportModal';
 import { distributeImportedRows } from './lib/excelDistributor';
 import { PdfExtractorModal } from './components/PdfExtractorModal';
 import { applyGlobalFont, getSavedFont } from './data/fontsCatalog';
-import { saveCrmDataToFirestore, loadCrmDataFromFirestore, subscribeCrmDataFromFirestore } from './lib/firebase';
-import { saveFileToFirestore, deleteFileFromFirestore, isSupabaseConfigured, configureSupabaseRuntime } from './lib/supabase';
+import { 
+  saveCrmDataToFirestore, 
+  loadCrmDataFromFirestore, 
+  subscribeCrmDataFromFirestore, 
+  saveFileToFirestore, 
+  deleteFileFromFirestore, 
+  isSupabaseConfigured, 
+  configureSupabaseRuntime 
+} from './lib/supabase';
 import { dispatchRoleNotification } from './lib/notifications';
 import { sanitizeAndDeduplicateUsers, mergeWithInitialComerciais } from './lib/userUtils';
 import { getCurrentWeeks } from './utils/weekUtils';
@@ -638,11 +645,14 @@ export default function App() {
     ]).then(([fbRes, fetchRes]) => {
       let dataToUse = null;
 
-      if (fetchRes.status === 'fulfilled' && fetchRes.value && fetchRes.value.deals && fetchRes.value.deals.length > 0) {
+      if (fbRes.status === 'fulfilled' && fbRes.value && ((fbRes.value.deals && fbRes.value.deals.length > 0) || (fbRes.value.arquivos && fbRes.value.arquivos.length > 0) || (fbRes.value.clients && fbRes.value.clients.length > 0))) {
+        dataToUse = fbRes.value;
+        setSyncTime('Sincronizado (Supabase Cloud)');
+      } else if (fetchRes.status === 'fulfilled' && fetchRes.value && fetchRes.value.deals && fetchRes.value.deals.length > 0) {
         dataToUse = fetchRes.value;
       } else if (fbRes.status === 'fulfilled' && fbRes.value) {
         dataToUse = fbRes.value;
-        setSyncTime('Sincronizado (Firebase Cloud)');
+        setSyncTime('Sincronizado (Supabase Cloud)');
       }
 
       if (dataToUse) {
