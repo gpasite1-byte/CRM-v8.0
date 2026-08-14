@@ -12,6 +12,7 @@ import {
   CartesianGrid
 } from 'recharts';
 import { generateDynamicWeeklyTimeline } from '../utils/periodEngine';
+import { baseDuasSemanasData } from '../data/baseDuasSemanasData';
 
 import GlobalPeriodBar from './GlobalPeriodBar';
 import { PeriodType } from '../utils/periodEngine';
@@ -97,10 +98,72 @@ export default function ComparativoSemanalView({
     setNewValorAprovado('');
   };
 
-  // Dynamic Weekly Timeline generated from real deals data
+  // Combined Deal Source (baseDuasSemanasData + CRM deals)
+  const allDeals = useMemo(() => {
+    let savedBase: any[] = [];
+    try {
+      const saved = localStorage.getItem('gpa_base_duas_semanas');
+      const parsed = saved ? JSON.parse(saved) : null;
+      savedBase = Array.isArray(parsed) && parsed.length > 0 ? parsed : baseDuasSemanasData;
+    } catch {
+      savedBase = baseDuasSemanasData;
+    }
+
+    const convertedBaseDeals: Deal[] = (savedBase || []).map((p, idx) => {
+      let etapa: Deal['etapa'] = 'proposta';
+      const est = (p.estadoProposta || p.estadoCRM || '').toLowerCase();
+      if (est.includes('aprov') || est.includes('fechad') || est.includes('ganha')) etapa = 'fechado';
+      else if (est.includes('perdid') || est.includes('rejeit')) etapa = 'perdido';
+      else if (est.includes('negoc')) etapa = 'negociacao';
+      else if (est.includes('reuni') || est.includes('visit')) etapa = 'visita';
+
+      const parseVal = (str?: string): number => {
+        if (!str) return 0;
+        const clean = String(str).replace(/[^\d,-]/g, '').replace(',', '.');
+        return parseFloat(clean) || 0;
+      };
+
+      return {
+        id: `base_${idx}`,
+        clienteNome: p.cliente || 'Cliente',
+        titulo: p.servico || `Proposta ${p.cliente}`,
+        valor: parseVal(p.valorProposta),
+        valorAprovado: parseVal(p.valorAprovado),
+        valorPerdido: parseVal(p.valorPerdido),
+        etapa,
+        comercialId: 'u9',
+        comercialNome: p.gestorComercial || 'Comercial',
+        prioridade: p.prioridade || 'Média',
+        diasAberto: p.diasEmAberto || 0,
+        dataEnvio: p.dataEnvio || '2026-07-27',
+        semana: p.semana || '27–31 Jul',
+        empresa: p.empresaGroup || 'GPA Angola',
+        proximaAcao: p.proximaAcao,
+        proximoContacto: p.proximoContacto,
+        observacoes: p.observacoes
+      };
+    });
+
+    const combined = [...convertedBaseDeals];
+    if (Array.isArray(deals)) {
+      deals.forEach(d => {
+        if (!d) return;
+        const exists = combined.some(b => 
+          b.clienteNome.toLowerCase() === (d.clienteNome || '').toLowerCase() && 
+          b.titulo.toLowerCase() === (d.titulo || '').toLowerCase()
+        );
+        if (!exists) {
+          combined.push(d);
+        }
+      });
+    }
+    return combined;
+  }, [deals]);
+
+  // Dynamic Weekly Timeline generated from all historical proposals + live deals
   const weeklyBuckets = useMemo(() => {
-    return generateDynamicWeeklyTimeline(deals, comerciais, new Date());
-  }, [deals, comerciais]);
+    return generateDynamicWeeklyTimeline(allDeals, comerciais, refDate || new Date());
+  }, [allDeals, comerciais, refDate]);
 
   // Filter buckets that actually have data or are near current date
   const displayBuckets = useMemo(() => {
