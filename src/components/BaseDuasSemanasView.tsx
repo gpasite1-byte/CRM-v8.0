@@ -76,15 +76,18 @@ export default function BaseDuasSemanasView({
 
   // Base state initialized safely from localStorage merged with static baseDuasSemanasData
   const [localPropostas, setLocalPropostas] = useState<BasePropostaRow[]>(() => {
-    let merged = [...baseDuasSemanasData];
+    let merged = Array.isArray(baseDuasSemanasData) ? [...baseDuasSemanasData] : [];
     try {
       const saved = localStorage.getItem('gpa_base_duas_semanas');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           parsed.forEach(p => {
+            if (!p || typeof p !== 'object') return;
             const exists = merged.some(sb => 
-              sb.cliente === p.cliente && sb.servico === p.servico && sb.semana === p.semana
+              sb && String(sb.cliente || '') === String(p.cliente || '') &&
+              String(sb.servico || '') === String(p.servico || '') &&
+              String(sb.semana || '') === String(p.semana || '')
             );
             if (!exists) merged.push(p);
           });
@@ -111,13 +114,16 @@ export default function BaseDuasSemanasView({
     const handleSync = () => {
       try {
         const saved = localStorage.getItem('gpa_base_duas_semanas');
-        let merged = [...baseDuasSemanasData];
+        let merged = Array.isArray(baseDuasSemanasData) ? [...baseDuasSemanasData] : [];
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             parsed.forEach(p => {
+              if (!p || typeof p !== 'object') return;
               const exists = merged.some(sb => 
-                sb.cliente === p.cliente && sb.servico === p.servico && sb.semana === p.semana
+                sb && String(sb.cliente || '') === String(p.cliente || '') &&
+                String(sb.servico || '') === String(p.servico || '') &&
+                String(sb.semana || '') === String(p.semana || '')
               );
               if (!exists) merged.push(p);
             });
@@ -144,18 +150,19 @@ export default function BaseDuasSemanasView({
   const [newObservacoes, setNewObservacoes] = useState('');
 
   // Helper to normalize week names
-  const normalizeSemana = (sem?: string | number, dataStr?: string): string => {
-    sem = String(sem || '');
-    if (sem.includes('06') || sem.includes('Anterior') || sem === 'Semana 1') return '06–10 Jul';
-    if (sem.includes('13') || sem.includes('Finda') || sem === 'Semana 2') return '13–17 Jul';
-    if (sem.includes('20') || sem.includes('21') || sem === 'Semana 3') return '20–25 Jul';
-    if (sem.includes('27') || sem.includes('30') || sem.includes('31') || sem === 'Semana 4' || sem === 'Semana Atual') return '27–31 Jul';
+  const normalizeSemana = (sem?: string | number, dataStr?: string | number): string => {
+    const semStr = String(sem || '');
+    if (semStr.includes('06') || semStr.includes('Anterior') || semStr === 'Semana 1') return '06–10 Jul';
+    if (semStr.includes('13') || semStr.includes('Finda') || semStr === 'Semana 2') return '13–17 Jul';
+    if (semStr.includes('20') || semStr.includes('21') || semStr === 'Semana 3') return '20–25 Jul';
+    if (semStr.includes('27') || semStr.includes('30') || semStr.includes('31') || semStr === 'Semana 4' || semStr === 'Semana Atual') return '27–31 Jul';
 
     if (dataStr) {
-      if (dataStr.includes('/07/') || dataStr.includes('-07-')) {
-        const dayMatch = dataStr.match(/(\d{1,2})[\/\-]/);
+      const dStr = String(dataStr);
+      if (dStr.includes('/07/') || dStr.includes('-07-')) {
+        const dayMatch = dStr.match(/(\d{1,2})[\/\-]/);
         if (dayMatch) {
-          const day = parseInt(dayMatch[1]);
+          const day = parseInt(dayMatch[1], 10);
           if (day <= 11) return '06–10 Jul';
           if (day <= 18) return '13–17 Jul';
           if (day <= 26) return '20–25 Jul';
@@ -170,72 +177,73 @@ export default function BaseDuasSemanasView({
   const combinedPropostas = useMemo(() => {
     const rawList = Array.isArray(localPropostas) && localPropostas.length > 0
       ? localPropostas
-      : baseDuasSemanasData;
+      : (Array.isArray(baseDuasSemanasData) ? baseDuasSemanasData : []);
 
     const list: BasePropostaRow[] = rawList
       .filter((p): p is BasePropostaRow => !!p && typeof p === 'object')
-      .map(p => ({
+      .map((p, idx) => ({
         ...p,
-        semana: p.semana || '27–31 Jul',
-        cliente: p.cliente || 'Sem Nome',
-        servico: p.servico || 'Serviços Diversos',
-        estadoProposta: p.estadoProposta || 'Proposta enviada',
-        valorProposta: p.valorProposta || '0,00 AOA',
-        valorAprovado: p.valorAprovado || '0,00 AOA',
-        valorPerdido: p.valorPerdido || '0,00 AOA',
-        probabilidade: p.probabilidade || '50%',
-        gestorComercial: p.gestorComercial || 'Comercial',
-        proximaAccao: p.proximaAccao || 'Acompanhar evolução',
-        proximoContacto: p.proximoContacto || '28/07/2026',
-        observacoes: p.observacoes || '',
-        diasEmAberto: p.diasEmAberto ?? 1,
-        valorPonderado: p.valorPonderado || '0,00 AOA',
-        classeCliente: p.classeCliente || 'A',
-        prioridade: p.prioridade || 'Normal',
-        estadoCRM: p.estadoCRM || 'Aberto',
-        metaSemanal: p.metaSemanal || '6 250 000,00 AOA',
-        pctMeta: p.pctMeta || '0%',
+        id: typeof p.id === 'number' ? p.id : idx + 1,
+        semana: String(p.semana || '27–31 Jul'),
+        cliente: String(p.cliente || 'Sem Nome'),
+        servico: String(p.servico || 'Serviços Diversos'),
+        estadoProposta: String(p.estadoProposta || 'Proposta enviada'),
+        valorProposta: String(p.valorProposta || '0,00 AOA'),
+        valorAprovado: String(p.valorAprovado || '0,00 AOA'),
+        valorPerdido: String(p.valorPerdido || '0,00 AOA'),
+        probabilidade: String(p.probabilidade || '50%'),
+        gestorComercial: String(p.gestorComercial || 'Comercial'),
+        proximaAccao: String(p.proximaAccao || 'Acompanhar evolução'),
+        proximoContacto: String(p.proximoContacto || '28/07/2026'),
+        observacoes: String(p.observacoes || ''),
+        diasEmAberto: typeof p.diasEmAberto === 'number' ? p.diasEmAberto : 1,
+        valorPonderado: String(p.valorPonderado || '0,00 AOA'),
+        classeCliente: String(p.classeCliente || 'A'),
+        prioridade: String(p.prioridade || 'Normal'),
+        estadoCRM: String(p.estadoCRM || 'Aberto'),
+        metaSemanal: String(p.metaSemanal || '6 250 000,00 AOA'),
+        pctMeta: String(p.pctMeta || '0%'),
         semanaDisplay: normalizeSemana(p.semana || '', p.dataEnvio)
       }));
 
     // Convert active deals into proposal rows if not duplicate
     if (Array.isArray(deals)) {
-      deals.forEach(d => {
-        if (!d) return;
-        const dCliente = (d.clienteNome || d.titulo || '').trim();
-        const dComercial = (d.comercialNome || '').trim();
+      deals.forEach((d, dIdx) => {
+        if (!d || typeof d !== 'object') return;
+        const dCliente = String(d.clienteNome || d.titulo || '').trim();
+        const dComercial = String(d.comercialNome || '').trim();
         if (!dCliente) return;
 
         const exists = list.some(p => 
-          String(p.cliente || '').toLowerCase().trim() === String(dCliente).toLowerCase() && 
-          String(p.gestorComercial || '').toLowerCase().trim() === String(dComercial).toLowerCase()
+          String(p.cliente || '').toLowerCase().trim() === dCliente.toLowerCase() && 
+          String(p.gestorComercial || '').toLowerCase().trim() === dComercial.toLowerCase()
         );
 
         if (!exists) {
-          const valNum = d.valor || 0;
+          const valNum = typeof d.valor === 'number' ? d.valor : 0;
           const valStr = `${valNum.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} AOA`;
           const sem = normalizeSemana(d.semana || '', d.dataEnvio);
 
           list.push({
             semana: sem,
             semanaDisplay: sem,
-            id: list.length + 100,
-            dataEnvio: d.dataEnvio || '27/07/2026',
+            id: list.length + 100 + dIdx,
+            dataEnvio: String(d.dataEnvio || '27/07/2026'),
             cliente: dCliente,
-            servico: d.titulo || 'Fornecimento de Serviços Diversos',
+            servico: String(d.titulo || 'Fornecimento de Serviços Diversos'),
             estadoProposta: (d.etapa === 'fechado' || d.etapa === 'producao') ? 'Proposta aprovada' : d.etapa === 'perdido' ? 'Perdida' : d.etapa === 'negociacao' ? 'Proposta em negociação' : 'Proposta enviada',
             valorProposta: valStr,
             valorAprovado: (d.etapa === 'fechado' || d.etapa === 'producao') ? valStr : '0,00 AOA',
             valorPerdido: d.etapa === 'perdido' ? valStr : '0,00 AOA',
             probabilidade: (d.etapa === 'fechado' || d.etapa === 'producao') ? '100%' : '60%',
             gestorComercial: dComercial || 'Comercial',
-            proximaAccao: d.proximaAcao || 'Acompanhar evolução no CRM',
-            proximoContacto: d.proximoContacto || '28/07/2026',
-            observacoes: d.observacoes || 'Sincronizado do CRM Pipeline',
-            diasEmAberto: d.diasAberto || 1,
+            proximaAccao: String(d.proximaAcao || 'Acompanhar evolução no CRM'),
+            proximoContacto: String(d.proximoContacto || '28/07/2026'),
+            observacoes: String(d.observacoes || 'Sincronizado do CRM Pipeline'),
+            diasEmAberto: typeof d.diasAberto === 'number' ? d.diasAberto : 1,
             valorPonderado: `${(valNum * 0.6).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} AOA`,
             classeCliente: 'A',
-            prioridade: d.prioridade || 'Normal',
+            prioridade: String(d.prioridade || 'Normal'),
             estadoCRM: (d.etapa === 'fechado' || d.etapa === 'producao') ? 'Fechado ganho' : d.etapa === 'perdido' ? 'Fechado perdido' : 'Aberto',
             metaSemanal: '6 250 000,00 AOA',
             pctMeta: '0%'
@@ -416,7 +424,7 @@ export default function BaseDuasSemanasView({
   const gestoresUnicos = useMemo(() => {
     const set = new Set<string>();
     combinedPropostas.forEach(p => {
-      if (p.gestorComercial) set.add(p.gestorComercial.trim());
+      if (p && p.gestorComercial) set.add(String(p.gestorComercial).trim());
     });
     return ['Todos', ...Array.from(set)];
   }, [combinedPropostas]);
@@ -424,7 +432,7 @@ export default function BaseDuasSemanasView({
   const estadosUnicos = useMemo(() => {
     const set = new Set<string>();
     combinedPropostas.forEach(p => {
-      if (p.estadoProposta) set.add(p.estadoProposta.trim());
+      if (p && p.estadoProposta) set.add(String(p.estadoProposta).trim());
     });
     return ['Todos', ...Array.from(set)];
   }, [combinedPropostas]);
