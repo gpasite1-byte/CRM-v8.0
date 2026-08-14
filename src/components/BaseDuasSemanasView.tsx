@@ -74,20 +74,26 @@ export default function BaseDuasSemanasView({
   // Edit Row state
   const [editingRow, setEditingRow] = useState<BasePropostaRow | null>(null);
 
-  // Base state initialized safely from localStorage or fallback to static baseDuasSemanasData
+  // Base state initialized safely from localStorage merged with static baseDuasSemanasData
   const [localPropostas, setLocalPropostas] = useState<BasePropostaRow[]>(() => {
+    let merged = [...baseDuasSemanasData];
     try {
       const saved = localStorage.getItem('gpa_base_duas_semanas');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          parsed.forEach(p => {
+            const exists = merged.some(sb => 
+              sb.cliente === p.cliente && sb.servico === p.servico && sb.semana === p.semana
+            );
+            if (!exists) merged.push(p);
+          });
         }
       }
     } catch (err) {
       console.error('Erro ao carregar gpa_base_duas_semanas:', err);
     }
-    return baseDuasSemanasData;
+    return merged;
   });
 
   // Save to localStorage whenever localPropostas changes & listen for external import updates
@@ -105,10 +111,17 @@ export default function BaseDuasSemanasView({
     const handleSync = () => {
       try {
         const saved = localStorage.getItem('gpa_base_duas_semanas');
+        let merged = [...baseDuasSemanasData];
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setLocalPropostas(parsed);
+            parsed.forEach(p => {
+              const exists = merged.some(sb => 
+                sb.cliente === p.cliente && sb.servico === p.servico && sb.semana === p.semana
+              );
+              if (!exists) merged.push(p);
+            });
+            setLocalPropostas(merged);
           }
         }
       } catch (err) {

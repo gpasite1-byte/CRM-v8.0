@@ -95,13 +95,20 @@ export default function DashboardView({
     return calculatePreviousPeriodRange(currentRange);
   }, [currentRange]);
 
-  // Combined Deal Source (baseDuasSemanasData + CRM deals)
+  // Combined Deal Source (baseDuasSemanasData + CRM deals + localStorage)
   const allDeals = useMemo(() => {
-    let savedBase: any[] = [];
+    let savedBase: any[] = [...baseDuasSemanasData];
     try {
       const saved = localStorage.getItem('gpa_base_duas_semanas');
       const parsed = saved ? JSON.parse(saved) : null;
-      savedBase = Array.isArray(parsed) && parsed.length > 0 ? parsed : baseDuasSemanasData;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed.forEach(p => {
+          const exists = savedBase.some(sb => 
+            sb.cliente === p.cliente && sb.servico === p.servico && sb.semana === p.semana
+          );
+          if (!exists) savedBase.push(p);
+        });
+      }
     } catch {
       savedBase = baseDuasSemanasData;
     }
