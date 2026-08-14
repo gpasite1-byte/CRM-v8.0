@@ -1803,7 +1803,8 @@ app.get("/api/auth/google/url", (req, res) => {
   const redirectUri = `${origin}/api/auth/google/callback`;
   const scopes = [
     "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/drive"
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/spreadsheets"
   ].join(" ");
   
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
@@ -2030,6 +2031,100 @@ app.post("/api/drive/backup", async (req, res) => {
     return res.status(500).json({
       success: false,
       error: err.message || "Erro ao guardar no Google Drive"
+    });
+  }
+});
+
+// GOOGLE SHEETS LIVE SYNC ENDPOINT
+app.post("/api/sheets/import-url", async (req, res) => {
+  try {
+    const { sheetUrl, spreadsheetId: rawId } = req.body || {};
+    let spreadsheetId = rawId;
+
+    if (!spreadsheetId && sheetUrl) {
+      const match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      if (match) {
+        spreadsheetId = match[1];
+      }
+    }
+
+    if (!spreadsheetId) {
+      return res.status(400).json({
+        success: false,
+        error: "ID ou Link da Planilha do Google não fornecido."
+      });
+    }
+
+    const token = await getValidGoogleDriveToken(
+      (req.headers["x-google-oauth-token"] as string) || (req.query.token as string)
+    );
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "Conta Google não autorizada. Conecte o Google Drive / Planilhas primeiro."
+      });
+    }
+
+    // Fetch spreadsheet metadata & values from Google Sheets API v4
+    const sheetsApiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?includeGridData=true`;
+    const sheetsRes = await fetch(sheetsApiUrl, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!sheetsRes.ok) {
+      const errText = await sheetsRes.text();
+      return res.status(sheetsRes.status).json({
+        success: false,
+        error: `Erro da API Google Planilhas (${sheetsRes.status}): ${errText}`
+      });
+    }
+
+    const sheetData = await sheetsRes.json();
+    const extractedRows: any[] = [];
+
+    if (sheetData.sheets && Array.isArray(sheetData.sheets)) {
+      sheetData.sheets.forEach((sh: any) => {
+        const title = sh.properties?.title || "Folha";
+        const gridData = sh.data?.[0]?.rowData;
+        if (!gridData || gridData.length < 2) return;
+
+        // Extract header row
+        const headers = (gridData[0].values || []).map((c: any) => c.formattedValue || c.userEnteredValue?.stringValue || "");
+
+        // Extract data rows
+        for (let r = 1; r < gridData.length; r++) {
+          const rowVals = gridData[r].values || [];
+          const rowObj: any = { _sheetTitle: title };
+          let hasVal = false;
+
+          headers.forEach((h: string, colIdx: number) => {
+            if (!h) return;
+            const val = rowVals[colIdx]?.formattedValue ?? rowVals[colIdx]?.userEnteredValue?.stringValue ?? rowVals[colIdx]?.userEnteredValue?.numberValue ?? "";
+            if (val) hasVal = true;
+            rowObj[h] = val;
+          });
+
+          if (hasVal) {
+            extractedRows.push(rowObj);
+          }
+        }
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Carregadas ${extractedRows.length} linhas do Google Planilhas com sucesso!`,
+      spreadsheetId,
+      title: sheetData.properties?.title || "Planilha Google",
+      rowsCount: extractedRows.length,
+      rows: extractedRows
+    });
+  } catch (err: any) {
+    console.error("Sheets import error:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Erro ao importar do Google Planilhas"
     });
   }
 });
