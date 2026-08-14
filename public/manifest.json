@@ -1,0 +1,39 @@
+{
+  "name": "GPA Angola CRM v8.0 PRO",
+  "short_name": "GPA CRM",
+  "description": "Sistema Comercial e Gestão de Vendas GPA Angola",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/gpa_logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Pipeline de Vendas",
+      "short_name": "Vendas",
+      "description": "Aceder ao Funil de Vendas",
+      "url": "/?view=pipeline"
+    },
+    {
+      "name": "Registar Visita",
+      "short_name": "Visitas",
+      "description": "Registar nova visita de campo",
+      "url": "/?view=visitas"
+    },
+    {
+      "name": "Documentos e Propostas",
+      "short_name": "Documentos",
+      "description": "Ver propostas e ficheiros",
+      "url": "/?view=documentos"
+    }
+  ]
+}

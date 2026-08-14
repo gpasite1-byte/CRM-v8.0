@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Deal, Cliente, Usuario, PropostaComercial, PropostaItem } from '../types';
-import { FileText, Download, Printer, Send, ExternalLink, Plus, Trash2, CheckCircle2, Building2, User, Phone, Mail, FileCheck, Shield, AlertCircle, Copy, Share2 } from 'lucide-react';
+import { FileText, Download, Printer, Send, ExternalLink, Plus, Trash2, CheckCircle2, Building2, User, Phone, Mail, FileCheck, Shield, AlertCircle, Copy, Share2, PenTool, Check, MessageCircle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { openWhatsAppDirect } from '../lib/notifications';
 
 interface ProposalModalProps {
   deal?: Deal;
@@ -26,8 +27,13 @@ export default function ProposalModal({
   onOpenPortal
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [digitalSignature, setDigitalSignature] = useState<string | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [proposalEstado, setProposalEstado] = useState<'rascunho' | 'enviada' | 'aceite' | 'recusada'>(deal?.etapa === 'ganho' ? 'aceite' : 'enviada');
 
   // Match client if deal provided
   const matchedClient = clients.find(c =>
@@ -150,6 +156,100 @@ export default function ProposalModal({
     }
   };
 
+  // Canvas signature handlers
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = ('touches' in e) ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = ('touches' in e) ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setDigitalSignature(null);
+  };
+
+  const confirmSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    setDigitalSignature(dataUrl);
+    setShowSignaturePad(false);
+  };
+
+  const handleWhatsAppShare = () => {
+    const msg = `*PROPOSTA COMERCIAL GPA ANGOLA*\n\n` +
+      `📄 *Número:* ${numeroProposta}\n` +
+      `🏢 *Cliente:* ${clienteEmpresa}\n` +
+      `👤 *A/C:* ${clienteNome}\n` +
+      `💰 *Valor Total:* ${formatAOA(totalGeral)} (c/ IVA 14%)\n` +
+      `⏱️ *Prazo de Execução:* ${prazoExecucao}\n` +
+      `💳 *IBAN:* ${ibanPagamento}\n\n` +
+      `🔗 *Consulte a proposta online e valide os termos:*\n${publicPortalUrl}\n\n` +
+      `_Enviado pelo comercial ${comercialNome} - GPA Angola, Lda._`;
+    openWhatsAppDirect(clienteTelefone, msg);
+  };
+
+  const handleApproveProposal = () => {
+    setProposalEstado('aceite');
+    const proposalObj: PropostaComercial = {
+      id: `prop_${Date.now()}`,
+      numero: numeroProposta,
+      dealId: deal?.id,
+      clienteNome,
+      clienteNif,
+      clienteEmpresa,
+      clienteEmail,
+      clienteTelefone,
+      clienteEndereco,
+      comercialNome,
+      comercialEmail,
+      dataEmissao,
+      dataValidade,
+      itens,
+      subtotal,
+      impostoTotal,
+      totalGeral,
+      condicoesPagamento,
+      prazoExecucao,
+      ibanPagamento,
+      estado: 'aceite',
+      linkPublico: publicPortalUrl,
+      observacoes
+    };
+    onSaveProposal(proposalObj);
+    alert(`🎉 Proposta ${numeroProposta} APROVADA com sucesso! O negócio foi marcado como Ganho no CRM.`);
+  };
+
   const handleSave = () => {
     const proposalObj: PropostaComercial = {
       id: `prop_${Date.now()}`,
@@ -172,7 +272,7 @@ export default function ProposalModal({
       condicoesPagamento,
       prazoExecucao,
       ibanPagamento,
-      estado: 'enviada',
+      estado: proposalEstado,
       linkPublico: publicPortalUrl,
       observacoes
     };
@@ -270,21 +370,30 @@ export default function ProposalModal({
         {/* Modal Main Content (Split view: Editor Controls + Live Printable Canvas) */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-100 space-y-6">
           
-          {/* Quick Share Link Banner */}
-          <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs">
+          {/* Quick Share Link & WhatsApp Banner */}
+          <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-200 p-3 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 text-blue-900">
               <Share2 className="w-4 h-4 text-blue-700 shrink-0" />
               <span>
-                <strong>Link de Validação Online para o Cliente:</strong> {publicPortalUrl}
+                <strong>Portal do Cliente:</strong> {publicPortalUrl}
               </span>
             </div>
-            <button
-              onClick={handleCopyLink}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1 rounded flex items-center gap-1 transition cursor-pointer shrink-0"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              {copiedLink ? 'Link Copiado!' : 'Copiar Link'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCopyLink}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {copiedLink ? 'Copiado!' : 'Copiar Link'}
+              </button>
+              <button
+                onClick={handleWhatsAppShare}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Enviar por WhatsApp
+              </button>
+            </div>
           </div>
 
           {/* Form Editor Section */}
@@ -575,15 +684,72 @@ export default function ProposalModal({
                 </p>
 
                 <div className="grid grid-cols-2 gap-8 pt-8 text-center">
-                  <div className="border-t border-gray-400 pt-2">
+                  <div className="border-t border-gray-400 pt-2 flex flex-col items-center">
                     <p className="font-bold text-gray-900">{comercialNome}</p>
                     <p className="text-[10px] text-gray-500">Pela GPA Angola, Lda.</p>
                   </div>
-                  <div className="border-t border-gray-400 pt-2">
+                  <div className="border-t border-gray-400 pt-2 flex flex-col items-center">
+                    {digitalSignature ? (
+                      <div className="mb-2">
+                        <img src={digitalSignature} alt="Assinatura Digital" className="h-12 object-contain" />
+                        <span className="text-[9px] text-emerald-600 font-bold block">✓ Assinado Digitalmente</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowSignaturePad(true)}
+                        className="mb-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded border border-dashed border-slate-400 flex items-center gap-1 cursor-pointer"
+                      >
+                        <PenTool size={11} /> Desenhar Assinatura Digital
+                      </button>
+                    )}
                     <p className="font-bold text-gray-900">{clienteEmpresa}</p>
                     <p className="text-[10px] text-gray-500">Adjudicação / Carimbo do Cliente</p>
                   </div>
                 </div>
+
+                {/* Digital Signature Pad Modal */}
+                {showSignaturePad && (
+                  <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl border border-slate-200 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                          <PenTool className="w-4 h-4 text-blue-600" /> Assinatura Digital
+                        </h4>
+                        <button onClick={() => setShowSignaturePad(false)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">✕</button>
+                      </div>
+                      <p className="text-xs text-slate-500">Desenhe a sua assinatura no quadro abaixo com o mouse ou dedo:</p>
+                      <div className="border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-slate-50">
+                        <canvas
+                          ref={canvasRef}
+                          width={320}
+                          height={140}
+                          className="w-full h-[140px] touch-none cursor-crosshair"
+                          onMouseDown={startDrawing}
+                          onMouseMove={draw}
+                          onMouseUp={stopDrawing}
+                          onMouseLeave={stopDrawing}
+                          onTouchStart={startDrawing}
+                          onTouchMove={draw}
+                          onTouchEnd={stopDrawing}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2 pt-2">
+                        <button
+                          onClick={clearSignature}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg"
+                        >
+                          Limpar
+                        </button>
+                        <button
+                          onClick={confirmSignature}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1 shadow-xs"
+                        >
+                          <Check size={14} /> Confirmar Assinatura
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -596,7 +762,14 @@ export default function ProposalModal({
           <p className="text-xs text-gray-500">
             Documento eletrónico processado por GPA Angola CRM v2.5.
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleApproveProposal}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Aprovar & Fechar Negócio (Ganho)
+            </button>
             <button
               onClick={handleSave}
               className="bg-[#1B365D] hover:bg-blue-950 text-white font-bold text-xs px-4 py-2 rounded shadow-xs flex items-center gap-1.5 transition cursor-pointer"
