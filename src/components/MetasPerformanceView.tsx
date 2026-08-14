@@ -132,32 +132,70 @@ export default function MetasPerformanceView({
     }
   ];
 
-  // Dynamic calculations incorporating new closed deals from CRM pipeline
-  const dynamicRows = officialRows.map(row => {
-    const comUser = comerciais.find(u => u.nome.toLowerCase() === row.comercial.toLowerCase());
-    let extraAprovado = 0;
-    if (comUser && deals && deals.length > 0) {
-      const userDeals = deals.filter(d => 
-        (d.comercialId === comUser.id || d.comercialNome === comUser.nome) && 
-        (d.etapa === 'fechado' || d.etapa === 'producao')
-      );
-      extraAprovado = userDeals.reduce((sum, d) => sum + (d.valor || 0), 0);
-    }
+  // Dynamic calculations incorporating ALL commercials from the system and their active deals
+  const dynamicRows = useMemo(() => {
+    // Include all sales team members
+    const salesUsers = comerciais.filter(u => 
+      u.perfil === 'comercial' || (u.perfil === 'admin' && (u.metaSemanal > 0 || u.nome.includes('David Neto')))
+    );
 
-    const baseAprovadoNum = parseFloat(row.aprovado.replace(/[^0-9,]/g, '').replace(',', '.')) || 0;
-    const totalAprovadoNum = baseAprovadoNum + extraAprovado;
-    
-    const baseMetaNum = parseFloat(row.metaSemanal.replace(/[^0-9,]/g, '').replace(',', '.')) || (comUser?.metaSemanal || 1);
-    const pctMetaNum = baseMetaNum > 0 ? Math.round((totalAprovadoNum / baseMetaNum) * 100) : 0;
-    
-    return {
-      ...row,
-      aprovadoDisplay: extraAprovado > 0 ? `${new Intl.NumberFormat('pt-AO').format(totalAprovadoNum)} AOA` : row.aprovado,
-      percentMetaDisplay: `${pctMetaNum}%`,
-      numericPct: pctMetaNum,
-      comUser
-    };
-  });
+    return salesUsers.map(comUser => {
+      const official = officialRows.find(r => 
+        r.comercial.toLowerCase().includes(comUser.nome.toLowerCase()) || 
+        comUser.nome.toLowerCase().includes(r.comercial.toLowerCase())
+      );
+
+      // Deals associated with this commercial
+      const userDeals = deals.filter(d => 
+        d.comercialId === comUser.id || 
+        (d.comercialNome && d.comercialNome.toLowerCase().includes(comUser.nome.toLowerCase())) ||
+        (comUser.nome && comUser.nome.toLowerCase().includes((d.comercialNome || '').toLowerCase()))
+      );
+
+      const userWonDeals = userDeals.filter(d => d.etapa === 'fechado' || d.etapa === 'producao' || d.etapa === 'ganho');
+      const userOpenDeals = userDeals.filter(d => d.etapa !== 'fechado' && d.etapa !== 'producao' && d.etapa !== 'perdido' && d.etapa !== 'ganho');
+
+      const dealsTotalVal = userDeals.reduce((sum, d) => sum + (d.valor || 0), 0);
+      const dealsAprovadoVal = userWonDeals.reduce((sum, d) => sum + (d.valor || 0), 0);
+
+      const baseMetaNum = comUser.metaSemanal || (official ? parseFloat(official.metaSemanal.replace(/[^0-9,]/g, '').replace(',', '.')) : 5000000);
+      const baseTotalVal = official ? parseFloat(official.valorTotal.replace(/[^0-9,]/g, '').replace(',', '.')) : 0;
+      const baseAprovadoVal = official ? parseFloat(official.aprovado.replace(/[^0-9,]/g, '').replace(',', '.')) : 0;
+      const basePropostasCount = official ? parseInt(official.propostas.replace(/[^0-9]/g, '')) : 0;
+
+      const finalTotalVal = Math.max(baseTotalVal, dealsTotalVal);
+      const finalAprovadoVal = Math.max(baseAprovadoVal, dealsAprovadoVal);
+      const finalPropostasCount = Math.max(basePropostasCount, userDeals.length);
+      const finalOpenVal = Math.max(0, finalTotalVal - finalAprovadoVal);
+      const finalForecastVal = finalAprovadoVal + (finalOpenVal * (comUser.pesoConversao || 0.4));
+
+      const pctMetaNum = baseMetaNum > 0 ? Math.round((finalAprovadoVal / baseMetaNum) * 100) : 0;
+      
+      let leitura = 'Intervenção comercial necessária';
+      if (pctMetaNum >= 100) {
+        leitura = 'Meta atingida';
+      } else if (pctMetaNum >= 50) {
+        leitura = 'Acelerar fecho';
+      }
+
+      return {
+        comercial: comUser.nome,
+        funcao: comUser.funcao || 'Comercial',
+        metaSemanal: `${new Intl.NumberFormat('pt-AO').format(baseMetaNum)} AOA`,
+        propostas: `${finalPropostasCount}`,
+        valorTotal: `${new Intl.NumberFormat('pt-AO').format(finalTotalVal)} AOA`,
+        aprovado: `${new Intl.NumberFormat('pt-AO').format(finalAprovadoVal)} AOA`,
+        percentMeta: `${pctMetaNum}%`,
+        pipelineAberto: `${new Intl.NumberFormat('pt-AO').format(finalOpenVal)} AOA`,
+        forecast: `${new Intl.NumberFormat('pt-AO').format(Math.round(finalForecastVal))} AOA`,
+        leitura,
+        aprovadoDisplay: `${new Intl.NumberFormat('pt-AO').format(finalAprovadoVal)} AOA`,
+        percentMetaDisplay: `${pctMetaNum}%`,
+        numericPct: pctMetaNum,
+        comUser
+      };
+    });
+  }, [comerciais, deals]);
 
   // Dynamic ranking for the Top 3 Podium
   const sortedLeaders = [...dynamicRows].sort((a, b) => b.numericPct - a.numericPct);

@@ -1293,6 +1293,42 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     setActiveCall({ ...activeCall, isCameraOff: nextCam });
   };
 
+  // Switch to Video during active call
+  const handleSwitchToVideo = async () => {
+    if (!activeCall) return;
+    try {
+      const vStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
+      mediaStreamRef.current = vStream;
+      setLocalStreamState(vStream);
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = vStream;
+      }
+      setActiveCall({ ...activeCall, type: 'video', isCameraOff: false });
+      broadcastRealtimeToAll('P2P_CALL_SIGNAL', {
+        type: 'SWITCH_TO_VIDEO',
+        callId: activeCall.callId,
+        fromUserId: loggedUser.id
+      });
+    } catch (err) {
+      console.warn('Erro ao aceder à câmara:', err);
+      alert('Não foi possível ativar a câmara. Verifique as permissões do navegador.');
+    }
+  };
+
+  // Switch to Audio during active call
+  const handleSwitchToAudio = () => {
+    if (!activeCall) return;
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getVideoTracks().forEach(t => t.stop());
+    }
+    setActiveCall({ ...activeCall, type: 'audio' });
+    broadcastRealtimeToAll('P2P_CALL_SIGNAL', {
+      type: 'SWITCH_TO_AUDIO',
+      callId: activeCall.callId,
+      fromUserId: loggedUser.id
+    });
+  };
+
   // Add Emoji reaction
   const handleAddReaction = (msgId: string, emoji: string) => {
     let updatedRx: Record<string, string[]> = {};
@@ -1359,13 +1395,13 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
   return (
     <>
-      <div className={`h-[calc(100vh-100px)] min-h-[500px] bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden text-left font-sans relative ${!activeTab || activeTab === 'chat' ? 'flex' : 'hidden'}`}>
+      <div className={`h-[calc(100vh-95px)] min-h-[520px] bg-slate-950 rounded-3xl border border-cyan-500/20 shadow-2xl overflow-hidden text-left font-sans relative backdrop-blur-xl ${!activeTab || activeTab === 'chat' ? 'flex' : 'hidden'}`}>
       
       {/* LEFT SIDEBAR: Channels & Users */}
-      <div className={`w-full md:w-80 bg-slate-900 text-slate-100 flex-col border-r border-slate-800 shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-80 bg-slate-900/95 text-slate-100 flex-col border-r border-slate-800/80 shrink-0 backdrop-blur-md ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
         
         {/* User Status Bar */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/80">
           <div className="flex items-center gap-3">
             <div className="relative">
               <UserAvatar name={loggedUser.nome} foto={loggedUser.foto} size="md" />
@@ -1985,7 +2021,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
             </div>
 
             {/* Bottom Call Control Bar */}
-            <div className="flex items-center justify-center gap-4 pt-2 z-10">
+            <div className="flex items-center justify-center gap-3 pt-2 z-10">
               
               {/* Mute Mic */}
               <button
@@ -1998,7 +2034,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                 {activeCall.isMuted ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
 
-              {/* Toggle Camera */}
+              {/* Turn Camera On / Off (Video Call) */}
               {activeCall.type === 'video' && (
                 <button
                   onClick={handleToggleCamera}
@@ -2008,6 +2044,28 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                   title={activeCall.isCameraOff ? 'Ligar Câmara' : 'Desligar Câmara'}
                 >
                   {activeCall.isCameraOff ? <CameraOff size={20} /> : <Camera size={20} />}
+                </button>
+              )}
+
+              {/* Switch to Video (when in Audio call) */}
+              {activeCall.type === 'audio' && (
+                <button
+                  onClick={handleSwitchToVideo}
+                  className="w-12 h-12 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center font-bold transition shadow-md cursor-pointer"
+                  title="Mudar para Chamada de Vídeo"
+                >
+                  <Video size={20} />
+                </button>
+              )}
+
+              {/* Switch to Audio (when in Video call) */}
+              {activeCall.type === 'video' && (
+                <button
+                  onClick={handleSwitchToAudio}
+                  className="w-12 h-12 rounded-2xl bg-slate-800 hover:bg-slate-700 text-cyan-400 flex items-center justify-center font-bold transition shadow-md cursor-pointer"
+                  title="Mudar para Chamada de Áudio"
+                >
+                  <Phone size={20} />
                 </button>
               )}
 
