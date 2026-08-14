@@ -24,8 +24,8 @@ function safeCreateClient(rawUrl: string, rawKey: string) {
 }
 
 function getStoredSupabaseConfig() {
-  const DEFAULT_URL = 'https://ivdjioewgcnrepyruryq.supabase.co';
-  const DEFAULT_KEY = 'sb_publishable_i6dibGvCrE8aTOdor__QvA_iFyy-f-i';
+  const DEFAULT_URL = 'https://cwojfqzmcjraxdxodbdg.supabase.co';
+  const DEFAULT_KEY = 'sb_publishable_-09xQP6TNwAOV0dD55K7Rg_GxHzH_rf';
 
   try {
     let url = localStorage.getItem('GPA_SUPABASE_URL') || import.meta.env.VITE_SUPABASE_URL || DEFAULT_URL;

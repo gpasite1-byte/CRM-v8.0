@@ -35,7 +35,7 @@ export default function ExcelImportManager({
   onLogOperation
 }: ExcelImportManagerProps) {
   const [activeCategory, setActiveCategory] = useState<ImportCategory>('propostas');
-  const [inputMethod, setInputMethod] = useState<'paste' | 'file'>('file');
+  const [inputMethod, setInputMethod] = useState<'paste' | 'file' | 'pdf'>('file');
   const [pastedText, setPastedText] = useState('');
   const [parsedRows, setParsedRows] = useState<any[]>([]);
   const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
@@ -230,6 +230,35 @@ export default function ExcelImportManager({
     };
 
     reader.readAsArrayBuffer(file);
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsProcessing(true);
+    setImportSuccessMsg(null);
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      
+      const res = await fetch('/api/import-pdf', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setImportSuccessMsg(`PDF processado com sucesso pela IA! Foram importadas propostas.`);
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        alert('Erro ao processar PDF: ' + data.error);
+      }
+    } catch (err: any) {
+      alert('Erro de rede: ' + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Execute Import into CRM State (Merge missing data only)
@@ -555,6 +584,16 @@ export default function ExcelImportManager({
             >
               <Clipboard size={13} /> Copiar & Colar Direto
             </button>
+            <button
+              onClick={() => setInputMethod('pdf')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                inputMethod === 'pdf'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <Upload size={13} /> Importar PDF (IA)
+            </button>
           </div>
         </div>
 
@@ -568,6 +607,20 @@ export default function ExcelImportManager({
               accept=".xlsx,.xls,.csv"
               onChange={handleFileUpload}
               className="mt-3 block mx-auto text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+            />
+          </div>
+        )}
+
+        {inputMethod === 'pdf' && (
+          <div className="border-2 border-dashed border-purple-300 hover:border-purple-500 transition rounded-xl p-6 text-center bg-purple-50/50">
+            <Upload size={32} className="mx-auto text-purple-600 mb-2" />
+            <p className="text-xs font-bold text-gray-800">Selecione o ficheiro PDF com as propostas</p>
+            <p className="text-[11px] text-gray-500 mt-1">A Inteligência Artificial (Gemini) vai ler o documento e extrair as propostas.</p>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handlePdfUpload}
+              className="mt-3 block mx-auto text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
             />
           </div>
         )}

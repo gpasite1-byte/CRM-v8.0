@@ -109,9 +109,15 @@ export default function ComparativoSemanalView({
     return weeklyBuckets.slice(-8);
   }, [weeklyBuckets]);
 
-  // Latest 2 weeks for direct comparison
+  // Latest 2 weeks for direct comparison (Only pick weeks that actually have data)
   const latestTwoWeeks = useMemo(() => {
-    if (weeklyBuckets.length >= 2) {
+    const weeksWithData = weeklyBuckets.filter(b => b.propostasCount > 0 || b.valorProposto > 0);
+    if (weeksWithData.length >= 2) {
+      return {
+        penultimate: weeksWithData[weeksWithData.length - 2],
+        ultimate: weeksWithData[weeksWithData.length - 1]
+      };
+    } else if (weeklyBuckets.length >= 2) {
       return {
         penultimate: weeklyBuckets[weeklyBuckets.length - 2],
         ultimate: weeklyBuckets[weeklyBuckets.length - 1]
@@ -524,46 +530,107 @@ export default function ComparativoSemanalView({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-950/60 p-3.5 rounded-lg border border-blue-700/50 shadow-inner">
-              <span className="text-[10px] font-bold text-blue-300 uppercase block mb-1">
-                Volume de Propostas
-              </span>
-              <div className="flex items-baseline justify-between font-mono">
-                <span className="text-xs text-gray-300">Penúltima: {latestTwoWeeks.penultimate.propostasCount}</span>
-                <span className="text-base font-black text-amber-300">Última: {latestTwoWeeks.ultimate.propostasCount}</span>
-              </div>
-            </div>
+          <div className="overflow-x-auto bg-white rounded-lg text-gray-900 shadow-inner border border-gray-200">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-100 text-[#1B365D] font-bold border-b border-gray-300">
+                  <th className="p-3 border-r border-gray-200">Indicador</th>
+                  <th className="p-3 border-r border-gray-200 text-right">{latestTwoWeeks.penultimate.label.split(' (')[0]}</th>
+                  <th className="p-3 border-r border-gray-200 text-right">{latestTwoWeeks.ultimate.label.split(' (')[0]}</th>
+                  <th className="p-3 border-r border-gray-200 text-center">Variação</th>
+                  <th className="p-3">Leitura</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                
+                {(() => {
+                  const p1 = latestTwoWeeks.penultimate;
+                  const p2 = latestTwoWeeks.ultimate;
 
-            <div className="bg-blue-950/60 p-3.5 rounded-lg border border-blue-700/50 shadow-inner">
-              <span className="text-[10px] font-bold text-blue-300 uppercase block mb-1">
-                Valor Total Proposto
-              </span>
-              <div className="flex items-baseline justify-between font-mono">
-                <span className="text-xs text-gray-300">Penúltima: {formatShortKz(latestTwoWeeks.penultimate.valorProposto)}</span>
-                <span className="text-base font-black text-blue-200">Última: {formatShortKz(latestTwoWeeks.ultimate.valorProposto)}</span>
-              </div>
-            </div>
+                  const calcVar = (v1: number, v2: number) => v1 > 0 ? ((v2 - v1) / v1) * 100 : (v2 > 0 ? 100 : 0);
+                  const formatPct = (val: number) => `${val > 0 ? '+' : ''}${val.toFixed(1).replace('.', ',')}%`;
+                  const formatAOA = (val: number) => new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' AOA';
 
-            <div className="bg-blue-950/60 p-3.5 rounded-lg border border-blue-700/50 shadow-inner">
-              <span className="text-[10px] font-bold text-blue-300 uppercase block mb-1">
-                Receita Aprovada
-              </span>
-              <div className="flex items-baseline justify-between font-mono">
-                <span className="text-xs text-gray-300">Penúltima: {formatShortKz(latestTwoWeeks.penultimate.valorAprovado)}</span>
-                <span className="text-base font-black text-emerald-400">Última: {formatShortKz(latestTwoWeeks.ultimate.valorAprovado)}</span>
-              </div>
-            </div>
+                  const rows = [
+                    {
+                      ind: 'N.º de propostas',
+                      v1: p1.propostasCount,
+                      v2: p2.propostasCount,
+                      var: calcVar(p1.propostasCount, p2.propostasCount),
+                      isMoney: false,
+                      leitura: (v: number) => v > 0 ? 'Mais propostas' : v < 0 ? 'Menos propostas' : 'Igual'
+                    },
+                    {
+                      ind: 'Valor total',
+                      v1: p1.valorProposto,
+                      v2: p2.valorProposto,
+                      var: calcVar(p1.valorProposto, p2.valorProposto),
+                      isMoney: true,
+                      leitura: (v: number) => v > 0 ? 'Crescimento' : v < 0 ? 'Redução' : 'Igual'
+                    },
+                    {
+                      ind: 'Valor aprovado',
+                      v1: p1.valorAprovado,
+                      v2: p2.valorAprovado,
+                      var: calcVar(p1.valorAprovado, p2.valorAprovado),
+                      isMoney: true,
+                      leitura: (v: number) => v > 0 ? 'Melhoria' : v < 0 ? 'Queda' : 'Igual'
+                    },
+                    {
+                      ind: 'Valor perdido',
+                      v1: p1.valorPerdido,
+                      v2: p2.valorPerdido,
+                      var: calcVar(p1.valorPerdido, p2.valorPerdido),
+                      isMoney: true,
+                      leitura: (v: number) => v > 0 ? 'Piora: aumentou' : v < 0 ? 'Melhoria: reduziu' : 'Igual'
+                    },
+                    {
+                      ind: 'Forecast',
+                      v1: p1.forecast,
+                      v2: p2.forecast,
+                      var: calcVar(p1.forecast, p2.forecast),
+                      isMoney: true,
+                      leitura: (v: number) => v > 0 ? 'Melhoria' : v < 0 ? 'Queda' : 'Igual'
+                    },
+                    {
+                      ind: 'Conversão',
+                      v1: p1.conversaoPct,
+                      v2: p2.conversaoPct,
+                      var: p2.conversaoPct - p1.conversaoPct,
+                      isMoney: false,
+                      isPct: true,
+                      leitura: (v: number) => v > 0 ? 'Aumento' : v < 0 ? 'Redução' : 'Igual'
+                    },
+                    {
+                      ind: 'Ticket médio',
+                      v1: p1.propostasCount > 0 ? p1.valorProposto / p1.propostasCount : 0,
+                      v2: p2.propostasCount > 0 ? p2.valorProposto / p2.propostasCount : 0,
+                      var: calcVar(p1.propostasCount > 0 ? p1.valorProposto / p1.propostasCount : 0, p2.propostasCount > 0 ? p2.valorProposto / p2.propostasCount : 0),
+                      isMoney: true,
+                      leitura: (v: number) => v > 0 ? 'Aumento' : v < 0 ? 'Redução' : 'Igual'
+                    }
+                  ];
 
-            <div className="bg-blue-950/60 p-3.5 rounded-lg border border-blue-700/50 shadow-inner">
-              <span className="text-[10px] font-bold text-blue-300 uppercase block mb-1">
-                Forecast Ponderado
-              </span>
-              <div className="flex items-baseline justify-between font-mono">
-                <span className="text-xs text-gray-300">Penúltima: {formatShortKz(latestTwoWeeks.penultimate.forecast)}</span>
-                <span className="text-base font-black text-purple-300">Última: {formatShortKz(latestTwoWeeks.ultimate.forecast)}</span>
-              </div>
-            </div>
+                  return rows.map((r, i) => (
+                    <tr key={i} className="hover:bg-blue-50 transition-colors">
+                      <td className="p-3 border-r border-gray-200 font-medium">{r.ind}</td>
+                      <td className="p-3 border-r border-gray-200 text-right">
+                        {r.isMoney ? formatAOA(r.v1) : r.isPct ? `${Math.round(r.v1)}%` : r.v1}
+                      </td>
+                      <td className="p-3 border-r border-gray-200 text-right font-bold text-blue-900">
+                        {r.isMoney ? formatAOA(r.v2) : r.isPct ? `${Math.round(r.v2)}%` : r.v2}
+                      </td>
+                      <td className={`p-3 border-r border-gray-200 text-center font-bold ${r.ind === 'Valor perdido' ? (r.var > 0 ? 'text-red-600' : 'text-emerald-600') : (r.var > 0 ? 'text-emerald-600' : 'text-red-600')}`}>
+                        {formatPct(r.var)}
+                      </td>
+                      <td className="p-3 font-medium text-gray-700">
+                        {r.leitura(r.var)}
+                      </td>
+                    </tr>
+                  ));
+                })()}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

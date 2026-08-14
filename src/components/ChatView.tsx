@@ -62,9 +62,28 @@ export interface ChatMessage {
   isSystem?: boolean;
 }
 
-// Global Pusher & Ably Clients for Failover
-const pusherClient = new Pusher("479f67b0dfb78f92cc03", { cluster: "sa1" });
-const ablyClient = new Ably.Realtime({ key: "m2MFEg.B7JOLQ:u_MtYkbldvUScXPtRmsnN7MglKkVGlxJquINjmlVsOo" });
+// Global Pusher & Ably Clients for Failover (Environment configurable with seamless failover)
+const PUSHER_KEY = import.meta.env.VITE_PUSHER_KEY || "a550429481c13c39f9a6";
+const PUSHER_CLUSTER = import.meta.env.VITE_PUSHER_CLUSTER || "sa1";
+const ABLY_KEY = import.meta.env.VITE_ABLY_API_KEY || "m2MFEg.B7JOLQ:u_MtYkbldvUScXPtRmsnN7MglKkVGlxJquINjmlVsOo";
+
+let pusherClient: Pusher | null = null;
+try {
+  if (PUSHER_KEY) {
+    pusherClient = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER });
+  }
+} catch (e) {
+  console.warn('Pusher client setup notice:', e);
+}
+
+let ablyClient: Ably.Realtime | null = null;
+try {
+  if (ABLY_KEY) {
+    ablyClient = new Ably.Realtime({ key: ABLY_KEY });
+  }
+} catch (e) {
+  console.warn('Ably client setup notice:', e);
+}
 
 export function getDMChannelId(userAId: string, userBId: string): string {
   const cleanA = (userAId || '').toString().trim().toLowerCase();
@@ -244,6 +263,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
   // Calls & Real-time Signaling
   const [activeCall, setActiveCall] = useState<{
+    callId?: string;
     isOpen: boolean;
     type: 'audio' | 'video';
     callerName: string;
@@ -707,21 +727,39 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     };
 
     // Pusher Subscribe
-    const pusherChannel = pusherClient.subscribe("gpa-crm-channel");
-    pusherChannel.bind_global((eventName: string, data: any) => {
-      if (eventName.startsWith("pusher:")) return;
-      handleEvent({ type: eventName, payload: data });
-    });
+    let pusherChannel: any = null;
+    if (pusherClient) {
+      try {
+        pusherChannel = pusherClient.subscribe("gpa-crm-channel");
+        pusherChannel.bind_global((eventName: string, data: any) => {
+          if (eventName.startsWith("pusher:")) return;
+          handleEvent({ type: eventName, payload: data });
+        });
+      } catch (e) {
+        console.warn('Pusher subscribe notice:', e);
+      }
+    }
 
     // Ably Subscribe
-    const ablyChannel = ablyClient.channels.get("gpa-crm-channel");
-    ablyChannel.subscribe((msg: any) => {
-      handleEvent({ type: msg.name, payload: msg.data });
-    });
+    let ablyChannel: any = null;
+    if (ablyClient) {
+      try {
+        ablyChannel = ablyClient.channels.get("gpa-crm-channel");
+        ablyChannel.subscribe((msg: any) => {
+          handleEvent({ type: msg.name, payload: msg.data });
+        });
+      } catch (e) {
+        console.warn('Ably subscribe notice:', e);
+      }
+    }
 
     return () => {
-      pusherClient.unsubscribe("gpa-crm-channel");
-      ablyChannel.unsubscribe();
+      if (pusherClient && pusherChannel) {
+        try { pusherClient.unsubscribe("gpa-crm-channel"); } catch (e) {}
+      }
+      if (ablyClient && ablyChannel) {
+        try { ablyChannel.unsubscribe(); } catch (e) {}
+      }
     };
   }, [loggedUser.id, activeChannelId]);
 
@@ -920,6 +958,62 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     }
   };
 
+  // Universal Multi-Network Realtime Broadcaster (Ably Cloud + WebSocket + Vercel Serverless + PeerJS P2P + Firestore)
+  const broadcastRealtimeToAll = (type: string, payload: any) => {
+    // 1. Direct Ably Cloud Broadcast (Instant across all Vercel domains, browsers, and mobile devices)
+    if (ablyClient) {
+      try {
+        const channel = ablyClient.channels.get("gpa-crm-channel");
+        channel.publish(type, payload);
+      } catch (e) {
+        console.warn('Ably direct publish notice:', e);
+      }
+    }
+
+    // 2. HTTP Server API Sync (Pusher + DB storage)
+    if (type === 'NEW_MESSAGE') {
+      fetch('/api/realtime/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    } else if (type === 'REACTION_UPDATE') {
+      fetch('/api/realtime/reactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    } else {
+      fetch('/api/realtime/calls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, type })
+      }).catch(() => {});
+    }
+
+    // 3. Local WebSocket Server
+    sendRealtimeWSEvent(type, payload);
+
+    // 4. WebRTC Direct P2P (PeerJS)
+    broadcastP2P(type === 'NEW_MESSAGE' ? 'P2P_NEW_MESSAGE' : 'P2P_CALL_SIGNAL', { ...payload, type });
+
+    // 5. BroadcastChannel (for multiple tabs on same machine)
+    if (bcRef.current) {
+      try {
+        bcRef.current.postMessage({ type, payload });
+      } catch {}
+    }
+
+    // 6. Firestore Fallback (asynchronous)
+    if (type === 'NEW_MESSAGE') {
+      sendFirestoreMsg(payload).catch(() => {});
+    } else if (type === 'REACTION_UPDATE') {
+      updateFirestoreReactions(payload.msgId, payload.reactions).catch(() => {});
+    } else {
+      sendFirestoreCallSignal({ ...payload, type }).catch(() => {});
+    }
+  };
+
   // Send message
   const handleSendMessage = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -944,27 +1038,8 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     setShowEmojiPicker(false);
     setLastReadTimes(prev => ({ ...prev, [activeChannelId]: now }));
 
-    // Sync to real-time server endpoint across network
-    fetch('/api/realtime/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newMsg)
-    }).catch(() => {});
-
-    // Send via WebSocket immediately
-    sendRealtimeWSEvent('NEW_MESSAGE', newMsg);
-    
-    // Broadcast directly via P2P for Serverless Reliability
-    broadcastP2P('P2P_NEW_MESSAGE', newMsg);
-
-    if (bcRef.current) {
-      try {
-        bcRef.current.postMessage({ type: 'NEW_MESSAGE', payload: newMsg });
-      } catch {}
-    }
-
-    // Save to Firestore Realtime DB asynchronously (non-blocking)
-    sendFirestoreMsg(newMsg).catch(() => {});
+    // Universal broadcast to all devices
+    broadcastRealtimeToAll('NEW_MESSAGE', newMsg);
   };
 
   // Attachment upload
@@ -994,6 +1069,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     const callId = `call_${Date.now()}`;
 
     setActiveCall({
+      callId,
       isOpen: true,
       type,
       callerName: targetName,
@@ -1018,20 +1094,8 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       targetUserId: activeDMUser?.id
     };
 
-    sendFirestoreCallSignal({ ...callSignal, type: 'INCOMING_CALL' });
-    sendRealtimeWSEvent('INCOMING_CALL', callSignal);
-    broadcastP2P('P2P_CALL_SIGNAL', { ...callSignal, type: 'INCOMING_CALL' });
-
-    // Broadcast call signal via HTTP real-time server endpoint
-    fetch('/api/realtime/calls', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(callSignal)
-    }).catch(() => {});
-
-    if (bcRef.current) {
-      bcRef.current.postMessage({ type: 'INCOMING_CALL', payload: callSignal });
-    }
+    // Broadcast instant call signal across Ably, WebSocket, Server, P2P, BroadcastChannel & Firestore
+    broadcastRealtimeToAll('INCOMING_CALL', callSignal);
 
     try {
       let stream: MediaStream;
@@ -1085,6 +1149,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     setIncomingCallSignal(null);
 
     setActiveCall({
+      callId: signal.callId,
       isOpen: true,
       type: signal.type,
       callerName: signal.callerName,
@@ -1095,19 +1160,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       isFullscreen: false
     });
 
-    sendFirestoreCallSignal({ type: 'ACCEPT_CALL', callId: signal.callId, responderId: loggedUser.id });
-    sendRealtimeWSEvent('ACCEPT_CALL', { callId: signal.callId, responderId: loggedUser.id });
-    broadcastP2P('P2P_CALL_SIGNAL', { type: 'ACCEPT_CALL', callId: signal.callId, responderId: loggedUser.id });
-
-    fetch('/api/realtime/calls', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'ACCEPT_CALL', callId: signal.callId, responderId: loggedUser.id })
-    }).catch(() => {});
-
-    if (bcRef.current) {
-      bcRef.current.postMessage({ type: 'ACCEPT_CALL', payload: { callId: signal.callId, responderId: loggedUser.id } });
-    }
+    broadcastRealtimeToAll('ACCEPT_CALL', { callId: signal.callId, responderId: loggedUser.id });
 
     try {
       let stream: MediaStream;
@@ -1167,19 +1220,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     handledCallIdsRef.current.add(signal.callId);
     setIncomingCallSignal(null);
 
-    sendFirestoreCallSignal({ type: 'REJECT_CALL', callId: signal.callId });
-    sendRealtimeWSEvent('REJECT_CALL', { callId: signal.callId });
-    broadcastP2P('P2P_CALL_SIGNAL', { type: 'REJECT_CALL', callId: signal.callId });
-
-    fetch('/api/realtime/calls', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'REJECT_CALL', callId: signal.callId })
-    }).catch(() => {});
-
-    if (bcRef.current) {
-      bcRef.current.postMessage({ type: 'REJECT_CALL', payload: { callId: signal.callId } });
-    }
+    broadcastRealtimeToAll('REJECT_CALL', { callId: signal.callId });
   };
 
   // End Call
@@ -1206,19 +1247,8 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
     setLocalStreamState(null);
     setRemoteStreamState(null);
 
-    sendFirestoreCallSignal({ type: 'END_CALL', endedBy: loggedUser.id, callId: activeCall?.callId });
-    sendRealtimeWSEvent('END_CALL', { endedBy: loggedUser.id, callId: activeCall?.callId });
-    broadcastP2P('P2P_CALL_SIGNAL', { type: 'END_CALL', endedBy: loggedUser.id, callId: activeCall?.callId });
-
-    fetch('/api/realtime/calls', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'END_CALL', endedBy: loggedUser.id, callId: activeCall?.callId })
-    }).catch(() => {});
-
-    if (bcRef.current) {
-      bcRef.current.postMessage({ type: 'END_CALL', payload: { endedBy: loggedUser.id, callId: activeCall?.callId } });
-    }
+    const callIdToEnd = activeCall?.callId;
+    broadcastRealtimeToAll('END_CALL', { endedBy: loggedUser.id, callId: callIdToEnd });
 
     if (activeCall) {
       const durSec = activeCall.duration;
@@ -1237,13 +1267,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       };
       setMessages(prev => [...prev, sysMsg]);
 
-      sendRealtimeWSEvent('NEW_MESSAGE', sysMsg);
-
-      fetch('/api/realtime/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sysMsg)
-      }).catch(() => {});
+      broadcastRealtimeToAll('NEW_MESSAGE', sysMsg);
     }
 
     setActiveCall(null);
@@ -1286,18 +1310,7 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       return { ...m, reactions: rx };
     }));
 
-    updateFirestoreReactions(msgId, updatedRx);
-    sendRealtimeWSEvent('REACTION_UPDATE', { msgId, reactions: updatedRx });
-
-    fetch('/api/realtime/reactions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ msgId, reactions: updatedRx })
-    }).catch(() => {});
-
-    if (bcRef.current) {
-      bcRef.current.postMessage({ type: 'REACTION_UPDATE', payload: { msgId, reactions: updatedRx } });
-    }
+    broadcastRealtimeToAll('REACTION_UPDATE', { msgId, reactions: updatedRx });
   };
 
   // Format call timer

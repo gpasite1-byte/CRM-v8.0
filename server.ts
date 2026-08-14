@@ -10,6 +10,9 @@ import { GoogleGenAI } from "@google/genai";
 import * as XLSXModule from "xlsx";
 import PusherServer from "pusher";
 import * as Ably from "ably";
+import multer from "multer";
+
+const upload = multer({ dest: 'uploads/' });
 
 const XLSX: any = (XLSXModule as any).default || XLSXModule;
 
@@ -38,28 +41,50 @@ function broadcastWS(data: any, senderWs?: WebSocket) {
 // ----------------------------------------------------
 // PUSHER + ABLY FAILOVER BROADCAST
 // ----------------------------------------------------
-const pusher = new PusherServer({
-  appId: "2186065",
-  key: "479f67b0dfb78f92cc03",
-  secret: "4b25b0669d97cbff5f4d",
-  cluster: "sa1",
-  useTLS: true
-});
+const PUSHER_APP_ID = process.env.PUSHER_APP_ID || "2186065";
+const PUSHER_KEY = process.env.PUSHER_KEY || "a550429481c13c39f9a6";
+const PUSHER_SECRET = process.env.PUSHER_SECRET || "ad7934efdf14ebde47ec";
+const PUSHER_CLUSTER = process.env.PUSHER_CLUSTER || "sa1";
+const ABLY_API_KEY = process.env.ABLY_API_KEY || "m2MFEg.B7JOLQ:u_MtYkbldvUScXPtRmsnN7MglKkVGlxJquINjmlVsOo";
 
-const ably = new Ably.Rest("m2MFEg.B7JOLQ:u_MtYkbldvUScXPtRmsnN7MglKkVGlxJquINjmlVsOo");
+let pusher: PusherServer | null = null;
+try {
+  if (PUSHER_APP_ID && PUSHER_KEY && PUSHER_SECRET) {
+    pusher = new PusherServer({
+      appId: PUSHER_APP_ID,
+      key: PUSHER_KEY,
+      secret: PUSHER_SECRET,
+      cluster: PUSHER_CLUSTER,
+      useTLS: true
+    });
+  }
+} catch (err) {
+  console.warn("Pusher server initialization notice:", err);
+}
+
+let ably: Ably.Rest | null = null;
+try {
+  if (ABLY_API_KEY) {
+    ably = new Ably.Rest(ABLY_API_KEY);
+  }
+} catch (err) {
+  console.warn("Ably server initialization notice:", err);
+}
 
 async function broadcastFailover(eventName: string, payload: any) {
-  try {
-    // Attempt 1: Pusher
-    await pusher.trigger("gpa-crm-channel", eventName, payload);
-  } catch (err) {
-    console.warn("Pusher failed, failing over to Ably:", err);
+  if (pusher) {
     try {
-      // Attempt 2: Ably
+      await pusher.trigger("gpa-crm-channel", eventName, payload);
+    } catch (err) {
+      console.warn("Pusher broadcast notice:", err);
+    }
+  }
+  if (ably) {
+    try {
       const channel = ably.channels.get("gpa-crm-channel");
       await channel.publish(eventName, payload);
-    } catch (err2) {
-      console.error("Both Pusher and Ably failed to broadcast:", err2);
+    } catch (err) {
+      console.warn("Ably broadcast notice:", err);
     }
   }
 }
@@ -158,7 +183,7 @@ app.get("/api/realtime/messages", (req, res) => {
   res.json({ success: true, messages: msgs });
 });
 
-app.post("/api/realtime/messages", (req, res) => {
+app.post("/api/realtime/messages", async (req, res) => {
   try {
     const newMsg = req.body;
     if (!newMsg || !newMsg.id) {
@@ -169,7 +194,7 @@ app.post("/api/realtime/messages", (req, res) => {
       current.push(newMsg);
       saveServerChatMessages(current);
       broadcastWS({ type: "NEW_MESSAGE", payload: newMsg });
-      broadcastFailover("NEW_MESSAGE", newMsg).catch(() => {});
+      await broadcastFailover("NEW_MESSAGE", newMsg);
     }
     res.json({ success: true, message: newMsg });
   } catch (e: any) {
@@ -177,7 +202,7 @@ app.post("/api/realtime/messages", (req, res) => {
   }
 });
 
-const handleReaction = (req: any, res: any) => {
+const handleReaction = async (req: any, res: any) => {
   try {
     const { msgId, reactions } = req.body || {};
     if (!msgId) return res.status(400).json({ success: false, error: "msgId required" });
@@ -185,7 +210,7 @@ const handleReaction = (req: any, res: any) => {
     const updated = current.map((m: any) => m.id === msgId ? { ...m, reactions } : m);
     saveServerChatMessages(updated);
     broadcastWS({ type: "REACTION_UPDATE", payload: { msgId, reactions } });
-    broadcastFailover("REACTION_UPDATE", { msgId, reactions }).catch(() => {});
+    await broadcastFailover("REACTION_UPDATE", { msgId, reactions });
     res.json({ success: true });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
@@ -225,7 +250,7 @@ app.get("/api/realtime/calls", (req, res) => {
   }
 });
 
-app.post("/api/realtime/calls", (req, res) => {
+app.post("/api/realtime/calls", async (req, res) => {
   try {
     const signal = req.body;
     if (!signal || !signal.type) {
@@ -237,11 +262,12 @@ app.post("/api/realtime/calls", (req, res) => {
       if (signal.callId) {
         activeCallSignals = activeCallSignals.filter(s => s.callId !== signal.callId);
       }
+    } else {
+      activeCallSignals.push(fullSig);
     }
 
-    activeCallSignals.push(fullSig);
     broadcastWS({ type: signal.type, payload: fullSig });
-    broadcastFailover(signal.type, fullSig).catch(() => {});
+    await broadcastFailover(signal.type, fullSig);
 
     res.json({ success: true, signal: fullSig });
   } catch (e: any) {
@@ -1211,88 +1237,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-// GET Chat messages
-app.get("/api/realtime/messages", (req, res) => {
-  const messages = getStoredChatMessages();
-  res.json({ messages });
-});
-
-// POST send new message
-app.post("/api/realtime/messages", (req, res) => {
-  try {
-    const newMsg = req.body;
-    if (!newMsg || !newMsg.id || (!newMsg.text && !newMsg.attachment)) {
-      return res.status(400).json({ error: "Dados de mensagem inválidos" });
-    }
-    const messages = getStoredChatMessages();
-    const existingIdx = messages.findIndex((m: any) => m.id === newMsg.id);
-    if (existingIdx === -1) {
-      messages.push(newMsg);
-      fs.writeFileSync(CHAT_DB_FILE, JSON.stringify(messages, null, 2), "utf-8");
-    } else {
-      messages[existingIdx] = { ...messages[existingIdx], ...newMsg };
-      fs.writeFileSync(CHAT_DB_FILE, JSON.stringify(messages, null, 2), "utf-8");
-    }
-    broadcastWS({ type: "NEW_MESSAGE", payload: newMsg });
-    res.json({ success: true, message: newMsg });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao salvar mensagem" });
-  }
-});
-
-// POST toggle/update reaction
-app.post("/api/realtime/reactions", (req, res) => {
-  try {
-    const { msgId, reactions } = req.body;
-    if (!msgId || !reactions) return res.status(400).json({ error: "Parâmetros em falta" });
-    const messages = getStoredChatMessages();
-    const idx = messages.findIndex((m: any) => m.id === msgId);
-    if (idx !== -1) {
-      messages[idx].reactions = reactions;
-      fs.writeFileSync(CHAT_DB_FILE, JSON.stringify(messages, null, 2), "utf-8");
-    }
-    broadcastWS({ type: "REACTION_UPDATE", payload: { msgId, reactions } });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao atualizar reação" });
-  }
-});
-
-// GET active calls
-app.get("/api/realtime/calls", (req, res) => {
-  const userId = req.query.userId as string;
-  const now = Date.now();
-  activeCallSignals = activeCallSignals.filter(s => (now - (s.timestamp || now)) < 45000);
-
-  const myCalls = activeCallSignals.filter(s => 
-    !userId || s.targetUserId === userId || s.senderId === userId || s.channelId === 'c_geral' || !s.targetUserId
-  );
-  res.json({ signals: myCalls });
-});
-
-// POST send call signal
-app.post("/api/realtime/calls", (req, res) => {
-  try {
-    const signal = req.body;
-    if (!signal || !signal.type) return res.status(400).json({ error: "Sinal inválido" });
-
-    signal.timestamp = Date.now();
-
-    if (signal.type === 'END_CALL' || signal.type === 'REJECT_CALL') {
-      activeCallSignals = activeCallSignals.filter(s => s.callId && s.callId !== signal.callId);
-    } else if (signal.type === 'ACCEPT_CALL' || signal.type === 'INCOMING_CALL') {
-      activeCallSignals = activeCallSignals.filter(s => s.callId !== signal.callId);
-      activeCallSignals.push(signal);
-    }
-
-    broadcastWS({ type: signal.type, payload: signal });
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao processar sinal de chamada" });
-  }
-});
-
 app.post("/api/logo", (req, res) => {
   const { logo } = req.body;
   serverAppLogo = logo || "";
@@ -1586,8 +1530,8 @@ function cleanSupabaseUrl(rawUrl: string): string {
 }
 
 function getSupabaseConfig() {
-  let url = process.env.SUPABASE_URL || "https://ivdjioewgcnrepyruryq.supabase.co";
-  let key = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_publishable_i6dibGvCrE8aTOdor__QvA_iFyy-f-i";
+  let url = process.env.SUPABASE_URL || "https://cwojfqzmcjraxdxodbdg.supabase.co";
+  let key = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_publishable_-09xQP6TNwAOV0dD55K7Rg_GxHzH_rf";
   if (fs.existsSync(SUPABASE_CONFIG_FILE)) {
     try {
       const data = JSON.parse(fs.readFileSync(SUPABASE_CONFIG_FILE, "utf-8"));
@@ -1767,7 +1711,7 @@ app.get("/api/supabase/status", async (req, res) => {
   return res.json({
     configured: true,
     connected: true,
-    url: url || "https://ivdjioewgcnrepyruryq.supabase.co",
+    url: url || "https://cwojfqzmcjraxdxodbdg.supabase.co",
     keyMasked: key ? `${key.substring(0, 15)}...` : '',
     hasCrmData,
     dealsCount,
@@ -2395,6 +2339,36 @@ interface SheetImportResult {
   historicoSemanas: any[];
 }
 
+function getMondayToFridayLabel(excelDateVal: any, fallbackLabel: string): string {
+  if (!excelDateVal) return fallbackLabel;
+  let d: Date | null = null;
+  if (typeof excelDateVal === 'number') {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    d = new Date(excelEpoch.getTime() + excelDateVal * 86400000);
+  } else {
+    d = new Date(excelDateVal);
+  }
+  if (!d || isNaN(d.getTime())) return fallbackLabel;
+
+  const dayOfWeek = d.getDay();
+  const distanceToMon = (dayOfWeek + 6) % 7;
+  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - distanceToMon);
+  const friday = new Date(monday);
+  friday.setDate(friday.getDate() + 4);
+
+  const monthsShort = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const sDay = String(monday.getDate()).padStart(2, '0');
+  const eDay = String(friday.getDate()).padStart(2, '0');
+  const sMonth = monthsShort[monday.getMonth()];
+  const eMonth = monthsShort[friday.getMonth()];
+
+  if (sMonth === eMonth) {
+    return `${sDay}–${eDay} ${sMonth}`;
+  } else {
+    return `${sDay} ${sMonth} – ${eDay} ${eMonth}`;
+  }
+}
+
 function processExcelSheets(allSheets: { file: string; sheetName: string; rows: any[]; rawRows: any[][] }[]): SheetImportResult {
   const deals: any[] = [];
   const clients: any[] = [];
@@ -2448,25 +2422,33 @@ function processExcelSheets(allSheets: { file: string; sheetName: string; rows: 
 
       const estadoRaw = getFieldXls(row,
         'ESTADO', 'Estado', 'STATUS', 'Status', 'SITUAÇÃO', 'Situação',
-        'FASE', 'Fase', 'ETAPA', 'Etapa', 'RESULTADO', 'Resultado'
+        'FASE', 'Fase', 'ETAPA', 'Etapa', 'RESULTADO', 'Resultado', 'ESTADO PROPOSTA', 'Estado proposta'
       );
 
       const vendedorRaw = getFieldXls(row,
         'VENDEDOR', 'Vendedor', 'COMERCIAL', 'Comercial',
-        'RESPONSÁVEL', 'Responsavel', 'Responsável', 'GESTOR', 'Gestor',
+        'RESPONSÁVEL', 'Responsavel', 'Responsável', 'GESTOR', 'Gestor', 'Gestor comercial',
         'NOME COMERCIAL', 'Nome Comercial'
       );
       const vendedorStr = vendedorRaw ? String(vendedorRaw).trim() : '';
 
       const semanaRaw = getFieldXls(row, 'SEMANA', 'Semana', 'PERÍODO', 'Periodo', 'Período', 'WEEK', 'Week', 'MÊS', 'Mês');
-      const semanaStr = semanaRaw ? String(semanaRaw).trim() : weekLabel;
+      let semanaStr = semanaRaw ? String(semanaRaw).trim() : weekLabel;
+
+      const dataEnvioRaw = getFieldXls(row, 'DATA ENVIO', 'Data envio', 'DATA', 'Data', 'ENVIO', 'Envio', 'Data de Envio');
+      if (dataEnvioRaw) {
+        semanaStr = getMondayToFridayLabel(dataEnvioRaw, semanaStr);
+      }
+
+      const probabilidadeRaw = getFieldXls(row, 'PROBABILIDADE', 'Probabilidade', 'PROB', 'Prob');
+      const probabilidade = probabilidadeRaw ? Number(probabilidadeRaw) : 0;
 
       const provinciaRaw = getFieldXls(row, 'PROVINCIA', 'PROVÍNCIA', 'Provincia', 'Província', 'LOCALIZAÇÃO', 'Local', 'CIDADE');
       const provinciaStr = provinciaRaw ? String(provinciaRaw).trim() : 'Luanda';
 
       const etapa = etapaStr(String(estadoRaw || ''));
-      const isAprovado = etapa === 'fechado';
-      const isPerdido = etapa === 'perdido';
+      const isAprovado = etapa === 'fechado' || String(estadoRaw).toLowerCase().includes('aprovada');
+      const isPerdido = etapa === 'perdido' || String(estadoRaw).toLowerCase().includes('perdida');
 
       // ----- DEAL -----
       if (clienteStr.length >= 2 && tituloStr.length >= 2) {
@@ -2607,6 +2589,85 @@ app.get("/api/parse-documents", (req, res) => {
     }));
     return res.json({ success: true, filesCount: new Set(sheets.map(s => s.file)).size, sheets: sheets.length, summary });
   } catch (err: any) {
+    return res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
+// POST /api/import-pdf — Native PDF import using Gemini AI
+app.post("/api/import-pdf", upload.single("pdf"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Nenhum ficheiro PDF enviado." });
+    }
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "A sua chave GEMINI_API_KEY não está configurada no ficheiro .env. Por favor adicione a chave primeiro." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const filePath = req.file.path;
+    
+    // Upload file to Gemini
+    const uploadResult = await ai.files.upload({
+        file: filePath,
+        mimeType: 'application/pdf',
+    });
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: [
+        uploadResult,
+        { text: "Extrai todas as propostas comerciais deste PDF. Devolve APENAS uma lista (array) em formato JSON, onde cada objeto tem as propriedades exatamente com estes nomes: 'semana', 'cliente', 'servico', 'valor' (string com a moeda, ex: '15 000 000 AOA'), 'estado' (ex: 'Proposta enviada'), 'comercial' (nome da pessoa). Não inclua crases (```json) nem markdown, devolve apenas o array JSON válido." }
+      ]
+    });
+    
+    let text = response.text || "";
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    const parsedData = JSON.parse(text);
+    
+    const data = getCrmData();
+    const existingDeals: any[] = Array.isArray(data.deals) ? data.deals : [];
+    
+    let dealsAdded = 0;
+    
+    for (const item of parsedData) {
+        const valNum = parseFloat(String(item.valor).replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+        
+        const d = {
+            id: `d_pdf_${Date.now()}_${Math.random()}`,
+            titulo: item.servico || 'Proposta Importada (IA)',
+            clienteNome: item.cliente || 'Cliente Extraído',
+            valor: valNum,
+            status: item.estado || 'Proposta enviada',
+            responsavel: 'u9', // Fallback to an admin
+            probabilidade: 50,
+            dataFecho: new Date().toISOString().split('T')[0],
+            semanaId: item.semana || 'Semana Em Curso',
+            observacoes: 'Importado por IA via PDF'
+        };
+        
+        if (item.comercial && Array.isArray(data.comerciais)) {
+            const user = data.comerciais.find((c: any) => c.nome.toLowerCase().includes(item.comercial.toLowerCase()) || item.comercial.toLowerCase().includes(c.nome.toLowerCase()));
+            if (user) d.responsavel = user.id;
+        }
+        
+        existingDeals.push(d);
+        dealsAdded++;
+    }
+    
+    data.deals = existingDeals;
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    
+    try { fs.unlinkSync(filePath); } catch (e) {}
+    try { await ai.files.delete({ name: uploadResult.name }); } catch (e) {}
+
+    broadcastWS({ type: "CRM_UPDATED", module: "deals" });
+    broadcastFailover("CRM_UPDATED", { module: "deals" });
+    
+    return res.json({ success: true, dealsCount: dealsAdded });
+    
+  } catch (err: any) {
+    if (req.file) { try { fs.unlinkSync(req.file.path); } catch (e) {} }
     return res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
