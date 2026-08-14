@@ -173,10 +173,8 @@ export default function ComparativoSemanalView({
     return generateDynamicWeeklyTimeline(allDeals, comerciais, refDate || new Date());
   }, [allDeals, comerciais, refDate]);
 
-  // Filter buckets that actually have data or are near current date
+  // Always display the last 8 weeks so that users can see "missing" weeks and add data to them
   const displayBuckets = useMemo(() => {
-    const withData = weeklyBuckets.filter(b => b.propostasCount > 0 || b.valorProposto > 0 || b.isCurrentWeek);
-    if (withData.length >= 3) return withData;
     return weeklyBuckets.slice(-8);
   }, [weeklyBuckets]);
 
