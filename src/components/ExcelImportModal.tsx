@@ -25,6 +25,7 @@ interface ExcelImportModalProps {
   onImportDeals: (newDeals: Deal[], rawRows?: any[]) => void;
   onImportClients: (newClients: Cliente[]) => void;
   onImportVisits: (newVisits: Visita[]) => void;
+  onImportPropostas?: (propostas: any[]) => void;
   currentDeals: Deal[];
   currentClients: Cliente[];
   currentVisits: Visita[];
@@ -38,11 +39,12 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
   onImportDeals,
   onImportClients,
   onImportVisits,
+  onImportPropostas,
   currentDeals,
   currentClients,
   currentVisits
 }) => {
-  const [importType, setImportType] = useState<'deals' | 'clients' | 'visits'>('deals');
+  const [importType, setImportType] = useState<'deals' | 'clients' | 'visits' | 'propostas'>('deals');
   const [file, setFile] = useState<File | null>(null);
   const [rawRows, setRawRows] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -98,7 +100,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     reader.readAsArrayBuffer(uploadedFile);
   };
 
-  const processMapping = (data: any[], type: 'deals' | 'clients' | 'visits', currentHeaders: string[]) => {
+  const processMapping = (data: any[], type: 'deals' | 'clients' | 'visits' | 'propostas', currentHeaders: string[]) => {
     if (type === 'deals') {
       const deals: Deal[] = data.map((row, idx) => {
         const ext = extractFieldsFromRow(row, idx);
@@ -229,10 +231,40 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         };
       });
       setParsedItems(visitsList);
+    } else if (type === 'propostas') {
+      const propostasList = data.map((row, idx) => {
+        const r = row;
+        const findVal = (keys: string[]) => {
+          for (const key of Object.keys(r)) {
+            if (keys.includes(normalizeHeader(key))) return r[key];
+          }
+          return undefined;
+        };
+
+        const semana = findVal(['semana']);
+        const cliente = findVal(['cliente', 'nome', 'empresa']);
+        const servico = findVal(['servico', 'servico', 'titulo']);
+        const estado = findVal(['estado', 'etapa', 'status']);
+        const gestor = findVal(['gestor', 'comercial', 'responsavel']);
+        const dataEnvio = findVal(['data', 'data envio']);
+        const valProp = findVal(['valor', 'valor proposta']);
+
+        return {
+          id: Date.now() + idx,
+          semana: String(semana || '').trim(),
+          dataEnvio: String(dataEnvio || '').trim(),
+          cliente: String(cliente || '').trim(),
+          servico: String(servico || 'Serviços').trim(),
+          estadoProposta: String(estado || 'Proposta enviada').trim(),
+          valorProposta: valProp || 0,
+          gestorComercial: String(gestor || 'Luísa Baltazar').trim()
+        };
+      }).filter(p => p.cliente || p.servico);
+      setParsedItems(propostasList);
     }
   };
 
-  const handleTypeChange = (newType: 'deals' | 'clients' | 'visits') => {
+  const handleTypeChange = (newType: 'deals' | 'clients' | 'visits' | 'propostas') => {
     setImportType(newType);
     if (rawRows.length > 0) {
       processMapping(rawRows, newType, headers);
@@ -251,6 +283,8 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       onImportClients(parsedItems as Cliente[]);
     } else if (importType === 'visits') {
       onImportVisits(parsedItems as Visita[]);
+    } else if (importType === 'propostas' && onImportPropostas) {
+      onImportPropostas(parsedItems);
     }
 
     setSuccessMsg(`Sucesso! ${parsedItems.length} registos importados e sincronizados na nuvem.`);
@@ -317,6 +351,18 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
           "Resultado": "Positivo",
           "Produtos": "Brindes e Fardas",
           "Necessidade": "Orçamento para 500 colaboradores"
+        }
+      ];
+    } else if (importType === 'propostas') {
+      filename = 'modelo_importacao_propostas_semanais_gpa.xlsx';
+      sampleData = [
+        {
+          "Semana": "12–16 Ago",
+          "Cliente": "Empresa X",
+          "Serviço": "Brindes",
+          "Estado proposta": "Proposta enviada",
+          "Valor proposta": 15000000,
+          "Gestor Comercial": "David Neto"
         }
       ];
     }
@@ -446,7 +492,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               1. Selecione o Tipo de Dados a Importar
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <button
                 type="button"
                 onClick={() => handleTypeChange('deals')}
@@ -462,6 +508,19 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
 
               <button
                 type="button"
+                onClick={() => handleTypeChange('propostas')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                  importType === 'propostas'
+                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-md'
+                    : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                <Database className="w-4 h-4" />
+                <span>Propostas Semanais</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleTypeChange('clients')}
                 className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
                   importType === 'clients'
@@ -470,7 +529,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                 }`}
               >
                 <Building2 className="w-4 h-4" />
-                <span>Clientes ({currentClients.length})</span>
+                <span>Clientes</span>
               </button>
 
               <button
@@ -581,6 +640,15 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                           <th className="p-3 font-semibold">Comercial</th>
                           <th className="p-3 font-semibold">Data</th>
                           <th className="p-3 font-semibold">Resultado</th>
+                        </>
+                      )}
+                      {importType === 'propostas' && (
+                        <>
+                          <th className="p-3 font-semibold">Semana</th>
+                          <th className="p-3 font-semibold">Cliente</th>
+                          <th className="p-3 font-semibold">Serviço/Proposta</th>
+                          <th className="p-3 font-semibold">Estado</th>
+                          <th className="p-3 font-semibold">Valor (Kz)</th>
                         </>
                       )}
                     </tr>
