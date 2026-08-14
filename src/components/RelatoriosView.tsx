@@ -111,6 +111,25 @@ export default function RelatoriosView({
           text: `Relatório exportado e sincronizado no Google Drive com sucesso!`,
           success: true
         });
+      } else if (res.status === 401 || (data.error && data.error.includes('OAuth'))) {
+        // 1-Click Google OAuth Authorization Popup
+        const urlRes = await fetch('/api/auth/google/url');
+        const urlData = await urlRes.json();
+        if (urlData.url) {
+          const authWin = window.open(urlData.url, 'google_auth_window', 'width=600,height=700');
+          window.addEventListener('message', async (event) => {
+            if (event.data && event.data.type === 'GOOGLE_DRIVE_CONNECTED') {
+              const retryRes = await fetch('/api/drive/backup', { method: 'POST' });
+              const retryData = await retryRes.json();
+              if (retryData.success) {
+                setBackupMsg({
+                  text: `Google Drive autenticado e cópia de segurança guardada com sucesso!`,
+                  success: true
+                });
+              }
+            }
+          }, { once: true });
+        }
       } else {
         setBackupMsg({
           text: `${data.error || 'Erro ao sincronizar com Google Drive.'}`,

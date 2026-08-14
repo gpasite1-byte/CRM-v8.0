@@ -1743,13 +1743,149 @@ app.post("/api/supabase/migrate", async (req, res) => {
   return res.json(result);
 });
 
-// Google Drive API endpoints for persistent Cloud Drive storage (Dedicated App Folder)
-app.get("/api/drive/status", (req, res) => {
-  const token = (req.headers["x-google-oauth-token"] as string) || process.env.GOOGLE_OAUTH_ACCESS_TOKEN || "";
+// Google Drive & Google OAuth Configuration
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
+const GOOGLE_DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID || "";
+
+let cachedGoogleAccessToken = process.env.GOOGLE_OAUTH_ACCESS_TOKEN || "";
+let cachedGoogleRefreshToken = process.env.GOOGLE_REFRESH_TOKEN || "";
+let tokenExpiresAt = 0;
+
+async function getValidGoogleDriveToken(customToken?: string): Promise<string> {
+  if (customToken) return customToken;
+  if (cachedGoogleAccessToken && Date.now() < tokenExpiresAt) {
+    return cachedGoogleAccessToken;
+  }
+  if (cachedGoogleRefreshToken) {
+    try {
+      const res = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          refresh_token: cachedGoogleRefreshToken,
+          grant_type: "refresh_token"
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.access_token) {
+          cachedGoogleAccessToken = data.access_token;
+          tokenExpiresAt = Date.now() + ((data.expires_in || 3600) - 300) * 1000;
+          return cachedGoogleAccessToken;
+        }
+      }
+    } catch (e) {
+      console.warn("Falha ao renovar token do Google Drive:", e);
+    }
+  }
+  return cachedGoogleAccessToken || process.env.GOOGLE_OAUTH_ACCESS_TOKEN || "";
+}
+
+// Google Drive API endpoints
+app.get("/api/drive/status", async (req, res) => {
+  const token = await getValidGoogleDriveToken((req.headers["x-google-oauth-token"] as string) || (req.query.token as string));
   res.json({
     authenticated: Boolean(token),
-    tokenAvailable: Boolean(token)
+    tokenAvailable: Boolean(token),
+    folderId: GOOGLE_DRIVE_FOLDER_ID,
+    clientId: GOOGLE_CLIENT_ID
   });
+});
+
+// Generate 1-Click Google OAuth Authorization URL
+app.get("/api/auth/google/url", (req, res) => {
+  const host = req.get("host");
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
+  const origin = req.headers.origin || `${protocol}://${host}`;
+  const redirectUri = `${origin}/api/auth/google/callback`;
+  const scopes = [
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive"
+  ].join(" ");
+  
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: scopes,
+    access_type: "offline",
+    prompt: "consent"
+  }).toString();
+
+  res.json({ url: authUrl });
+});
+
+// Google OAuth 2.0 Callback Receiver
+app.get("/api/auth/google/callback", async (req, res) => {
+  try {
+    const code = req.query.code as string;
+    if (!code) {
+      return res.status(400).send("Código de autorização Google não fornecido.");
+    }
+    const host = req.get("host");
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
+    const origin = req.headers.origin || `${protocol}://${host}`;
+    const redirectUri = `${origin}/api/auth/google/callback`;
+
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code"
+      })
+    });
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text();
+      return res.status(500).send(`Erro ao autenticar com Google: ${err}`);
+    }
+
+    const tokenData = await tokenRes.json();
+    cachedGoogleAccessToken = tokenData.access_token || "";
+    if (tokenData.refresh_token) {
+      cachedGoogleRefreshToken = tokenData.refresh_token;
+    }
+    tokenExpiresAt = Date.now() + ((tokenData.expires_in || 3600) - 300) * 1000;
+
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Google Drive Conectado!</title>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #0f172a; color: white; text-align: center; margin: 0; }
+            .card { background: #1e293b; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-width: 480px; }
+            h2 { color: #10b981; margin-bottom: 0.5rem; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h2>✅ Google Drive Conectado!</h2>
+            <p>A pasta oficial da GPA Angola foi vinculada ao CRM com sucesso.</p>
+            <p style="font-size: 0.85rem; color: #94a3b8;">A regressar ao CRM...</p>
+          </div>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: 'GOOGLE_DRIVE_CONNECTED', token: '${tokenData.access_token}' }, '*');
+              setTimeout(() => window.close(), 1500);
+            } else {
+              setTimeout(() => { window.location.href = '/'; }, 2000);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+  } catch (err: any) {
+    res.status(500).send(`Erro: ${err.message}`);
+  }
 });
 
 // Helper to build UTF-8 Excel CSV Report
@@ -1795,8 +1931,8 @@ function generateExcelCsvReport(crmData: any): string {
 
 // Helper function to upload or update a file in Google Drive folder
 async function uploadToDrive(token: string, folderId: string, fileName: string, mimeType: string, contentBuffer: Buffer) {
-  // Search if file exists
-  const fileSearchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name = '${fileName}' and '${folderId}' in parents and trashed = false`)}&fields=files(id,name,webViewLink)`;
+  const targetFolderId = folderId || GOOGLE_DRIVE_FOLDER_ID;
+  const fileSearchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name = '${fileName}' and '${targetFolderId}' in parents and trashed = false`)}&fields=files(id,name,webViewLink)`;
   const fileSearchRes = await fetch(fileSearchUrl, {
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -1808,8 +1944,8 @@ async function uploadToDrive(token: string, folderId: string, fileName: string, 
     mimeType: mimeType
   };
 
-  if (!existingFile && folderId) {
-    metadata.parents = [folderId];
+  if (!existingFile && targetFolderId) {
+    metadata.parents = [targetFolderId];
   }
 
   const boundary = "-------314159265358979323846";
@@ -1850,7 +1986,7 @@ async function uploadToDrive(token: string, folderId: string, fileName: string, 
 app.post("/api/drive/backup", async (req, res) => {
   try {
     const clientToken = (req.headers["x-google-oauth-token"] as string) || req.body?.token;
-    const token = clientToken || process.env.GOOGLE_OAUTH_ACCESS_TOKEN || "";
+    const token = await getValidGoogleDriveToken(clientToken);
 
     if (!token) {
       return res.status(401).json({
@@ -1861,36 +1997,9 @@ app.post("/api/drive/backup", async (req, res) => {
 
     const crmData = getCrmData();
     const jsonContent = JSON.stringify(crmData, null, 2);
-    const folderName = `GPA Angola CRM App`;
+    const folderId = GOOGLE_DRIVE_FOLDER_ID;
 
-    // 1. Search for dedicated app folder on user's Google Drive
-    const folderSearchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`)}&fields=files(id,name)`;
-    const folderSearchRes = await fetch(folderSearchUrl, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const folderSearchData = await folderSearchRes.json();
-    
-    let folderId = "";
-    if (folderSearchData.files && folderSearchData.files.length > 0) {
-      folderId = folderSearchData.files[0].id;
-    } else {
-      // Create dedicated folder on Google Drive for this specific app project
-      const createFolderRes = await fetch(`https://www.googleapis.com/drive/v3/files`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: folderName,
-          mimeType: "application/vnd.google-apps.folder"
-        })
-      });
-      const createFolderData = await createFolderRes.json();
-      folderId = createFolderData.id;
-    }
-
-    // 2. Upload JSON Database Backup
+    // 1. Upload JSON Database Backup
     const jsonResult = await uploadToDrive(
       token,
       folderId,
@@ -1899,7 +2008,7 @@ app.post("/api/drive/backup", async (req, res) => {
       Buffer.from(jsonContent, "utf-8")
     );
 
-    // 3. Upload Excel CSV Relatório Backup
+    // 2. Upload Excel CSV Relatório Backup
     const csvContent = generateExcelCsvReport(crmData);
     const excelResult = await uploadToDrive(
       token,
@@ -1911,8 +2020,8 @@ app.post("/api/drive/backup", async (req, res) => {
 
     return res.json({
       success: true,
-      message: `Cópia de segurança e Relatório Excel guardados com sucesso na pasta "${folderName}" do seu Google Drive!`,
-      folder: folderName,
+      message: `Cópia de segurança e Relatório Excel guardados com sucesso na sua pasta do Google Drive!`,
+      folderId: folderId,
       file: jsonResult,
       excelFile: excelResult
     });
@@ -2162,33 +2271,31 @@ app.post("/api/cloud-sync/sync-file", async (req, res) => {
     }
 
     // 2. Google Drive Sync
-    if (config.googleDriveApiKey || process.env.GOOGLE_OAUTH_ACCESS_TOKEN) {
-      try {
-        const token = process.env.GOOGLE_OAUTH_ACCESS_TOKEN || "";
-        if (token) {
-          let buffer: Buffer;
-          if (typeof fileData === 'string' && fileData.startsWith('data:')) {
-            buffer = Buffer.from(fileData.split(',')[1], 'base64');
-          } else {
-            buffer = Buffer.from(fileData, 'base64');
-          }
-
-          const driveRes = await uploadToDrive(
-            token,
-            config.googleDriveFolderId || "",
-            fileName,
-            mimeType || "application/octet-stream",
-            buffer
-          );
-          if (driveRes && driveRes.id) {
-            results.googleDrive = true;
-            results.googleDriveUrl = driveRes.webViewLink || `https://drive.google.com/file/d/${driveRes.id}/view`;
-            results.googleDriveFileId = driveRes.id;
-          }
+    try {
+      const token = await getValidGoogleDriveToken();
+      if (token) {
+        let buffer: Buffer;
+        if (typeof fileData === 'string' && fileData.startsWith('data:')) {
+          buffer = Buffer.from(fileData.split(',')[1], 'base64');
+        } else {
+          buffer = Buffer.from(fileData, 'base64');
         }
-      } catch (gdErr) {
-        console.warn('Google drive sync warning:', gdErr);
+
+        const driveRes = await uploadToDrive(
+          token,
+          config.googleDriveFolderId || GOOGLE_DRIVE_FOLDER_ID,
+          fileName,
+          mimeType || "application/octet-stream",
+          buffer
+        );
+        if (driveRes && driveRes.id) {
+          results.googleDrive = true;
+          results.googleDriveUrl = driveRes.webViewLink || `https://drive.google.com/file/d/${driveRes.id}/view`;
+          results.googleDriveFileId = driveRes.id;
+        }
       }
+    } catch (gdErr) {
+      console.warn('Google drive sync warning:', gdErr);
     }
 
     return res.json({ success: true, results });
@@ -2205,11 +2312,11 @@ app.post("/api/drive/sync-all-documents", async (req, res) => {
     const arquivosList = Array.isArray(crmData.arquivos) ? crmData.arquivos : [];
     let syncedCount = 0;
     
-    const token = process.env.GOOGLE_OAUTH_ACCESS_TOKEN || "";
+    const token = await getValidGoogleDriveToken();
     if (token) {
       // Save current CRM/Supabase state JSON to Drive
       const jsonContent = JSON.stringify(crmData, null, 2);
-      await uploadToDrive(token, "", `GPA_Angola_CRM_Documentos_Sync.json`, "application/json", Buffer.from(jsonContent, "utf-8")).catch(() => {});
+      await uploadToDrive(token, GOOGLE_DRIVE_FOLDER_ID, `GPA_Angola_CRM_Documentos_Sync.json`, "application/json", Buffer.from(jsonContent, "utf-8")).catch(() => {});
     }
 
     for (const arq of arquivosList) {
@@ -2226,7 +2333,7 @@ app.post("/api/drive/sync-all-documents", async (req, res) => {
             }
           }
           if (buffer && token) {
-            await uploadToDrive(token, "", arq.nome || "Documento_GPA", arq.tipo || "application/octet-stream", buffer).catch(() => {});
+            await uploadToDrive(token, GOOGLE_DRIVE_FOLDER_ID, arq.nome || "Documento_GPA", arq.tipo || "application/octet-stream", buffer).catch(() => {});
             syncedCount++;
           }
         } catch (e) {
