@@ -1807,6 +1807,24 @@ export default function App() {
     );
   };
 
+  const handleImportRelatorios = (newRelatorios: RelatorioDiario[]) => {
+    setRelatoriosDiarios(prev => [...newRelatorios, ...prev]);
+    addNotification(
+      'Relatórios Importados 📝',
+      `${newRelatorios.length} relatórios foram carregados no sistema.`,
+      'success'
+    );
+  };
+
+  const handleImportAnaliseCritica = (newDeals: Deal[]) => {
+    setDeals(prev => [...newDeals, ...prev]);
+    addNotification(
+      'Análise Crítica Atualizada 📈',
+      `${newDeals.length} negócios para análise crítica importados.`,
+      'success'
+    );
+  };
+
   const handleAddUserSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -3551,6 +3569,8 @@ export default function App() {
         onImportDeals={handleImportDeals}
         onImportClients={handleImportClients}
         onImportVisits={handleImportVisits}
+        onImportRelatorios={handleImportRelatorios}
+        onImportAnaliseCritica={handleImportAnaliseCritica}
         currentDeals={deals}
         currentClients={clients}
         currentVisits={visits}

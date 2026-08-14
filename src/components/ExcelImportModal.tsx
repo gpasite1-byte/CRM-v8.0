@@ -26,6 +26,8 @@ interface ExcelImportModalProps {
   onImportClients: (newClients: Cliente[]) => void;
   onImportVisits: (newVisits: Visita[]) => void;
   onImportPropostas?: (propostas: any[]) => void;
+  onImportRelatorios?: (relatorios: any[]) => void;
+  onImportAnaliseCritica?: (dados: any[]) => void;
   currentDeals: Deal[];
   currentClients: Cliente[];
   currentVisits: Visita[];
@@ -40,11 +42,13 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
   onImportClients,
   onImportVisits,
   onImportPropostas,
+  onImportRelatorios,
+  onImportAnaliseCritica,
   currentDeals,
   currentClients,
   currentVisits
 }) => {
-  const [importType, setImportType] = useState<'deals' | 'clients' | 'visits' | 'propostas'>('deals');
+  const [importType, setImportType] = useState<'deals' | 'clients' | 'visits' | 'propostas' | 'relatorios' | 'analisecritica'>('deals');
   const [file, setFile] = useState<File | null>(null);
   const [rawRows, setRawRows] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -100,7 +104,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
     reader.readAsArrayBuffer(uploadedFile);
   };
 
-  const processMapping = (data: any[], type: 'deals' | 'clients' | 'visits' | 'propostas', currentHeaders: string[]) => {
+  const processMapping = (data: any[], type: 'deals' | 'clients' | 'visits' | 'propostas' | 'relatorios' | 'analisecritica', currentHeaders: string[]) => {
     if (type === 'deals') {
       const deals: Deal[] = data.map((row, idx) => {
         const ext = extractFieldsFromRow(row, idx);
@@ -261,10 +265,55 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
         };
       }).filter(p => p.cliente || p.servico);
       setParsedItems(propostasList);
+    } else if (type === 'relatorios') {
+      const relatoriosList = data.map((row, idx) => {
+        const r = row;
+        const findVal = (keys: string[]) => {
+          for (const key of Object.keys(r)) {
+            if (keys.includes(normalizeHeader(key))) return r[key];
+          }
+          return undefined;
+        };
+
+        const dataEnvio = findVal(['data', 'data envio', 'criado em']) || new Date().toISOString().split('T')[0];
+        const semana = findVal(['semana', 'periodo']);
+        const gestor = findVal(['gestor', 'comercial', 'responsavel']);
+        const resumo = findVal(['resumo', 'descricao', 'actividade']);
+        const pipelineTotal = findVal(['pipeline total', 'valor pipeline', 'pipeline']);
+        const adjudicacoesCount = findVal(['adjudicacoes', 'negocios ganhos']);
+
+        return {
+          id: Date.now() + idx + '',
+          data: String(dataEnvio).trim(),
+          semana: String(semana || '').trim(),
+          comercialNome: String(gestor || '').trim(),
+          actividadeEquipa: [{ comercialNome: String(gestor || ''), resumo: String(resumo || '') }],
+          pipelineTotal: Number(pipelineTotal) || 0,
+          pipelineDestaques: [],
+          visitasRealizadas: [],
+          propostasEmitidasCount: 0,
+          propostasEmitidasValorTotal: 0,
+          propostasEmitidasDestaques: [],
+          adjudicacoesCount: Number(adjudicacoesCount) || 0,
+          cobrancasEfectuadas: '',
+          criadoEm: String(dataEnvio).trim()
+        };
+      }).filter(p => p.comercialNome);
+      setParsedItems(relatoriosList);
+    } else if (type === 'analisecritica') {
+      const analiseList = data.map((row, idx) => {
+        const ext = extractFieldsFromRow(row, idx);
+        return {
+          ...ext,
+          etapa: ext.etapa || 'negociacao',
+          titulo: ext.titulo || 'Análise Crítica Import',
+        };
+      }).filter(p => p.clienteNome || p.titulo);
+      setParsedItems(analiseList);
     }
   };
 
-  const handleTypeChange = (newType: 'deals' | 'clients' | 'visits' | 'propostas') => {
+  const handleTypeChange = (newType: 'deals' | 'clients' | 'visits' | 'propostas' | 'relatorios' | 'analisecritica') => {
     setImportType(newType);
     if (rawRows.length > 0) {
       processMapping(rawRows, newType, headers);
@@ -285,6 +334,10 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
       onImportVisits(parsedItems as Visita[]);
     } else if (importType === 'propostas' && onImportPropostas) {
       onImportPropostas(parsedItems);
+    } else if (importType === 'relatorios' && onImportRelatorios) {
+      onImportRelatorios(parsedItems);
+    } else if (importType === 'analisecritica' && onImportAnaliseCritica) {
+      onImportAnaliseCritica(parsedItems as Deal[]);
     }
 
     setSuccessMsg(`Sucesso! ${parsedItems.length} registos importados e sincronizados na nuvem.`);
@@ -338,7 +391,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
           "Endereço": "Avenida 4 de Fevereiro, Luanda"
         }
       ];
-    } else {
+    } else if (importType === 'visits') {
       filename = 'modelo_importacao_visitas_gpa.xlsx';
       sampleData = [
         {
@@ -363,6 +416,29 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
           "Estado proposta": "Proposta enviada",
           "Valor proposta": 15000000,
           "Gestor Comercial": "David Neto"
+        }
+      ];
+    } else if (importType === 'relatorios') {
+      filename = 'modelo_importacao_relatorios_diarios_gpa.xlsx';
+      sampleData = [
+        {
+          "Data Envio": "2026-07-22",
+          "Semana": "21 a 25 de Julho de 2026",
+          "Comercial": "David Neto",
+          "Resumo da Actividade": "Reunião de follow up",
+          "Pipeline Total": 45000000,
+          "Adjudicações": 1
+        }
+      ];
+    } else if (importType === 'analisecritica') {
+      filename = 'modelo_importacao_analise_critica_gpa.xlsx';
+      sampleData = [
+        {
+          "Nome do Negócio": "Contrato Fardas 2026",
+          "Cliente/Empresa": "Sonangol",
+          "Valor (Kz)": 30000000,
+          "Etapa Atual": "negociacao",
+          "Comercial Responsável": "Luísa Baltazar"
         }
       ];
     }
@@ -492,7 +568,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               1. Selecione o Tipo de Dados a Importar
             </label>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => handleTypeChange('deals')}
@@ -516,7 +592,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                 }`}
               >
                 <Database className="w-4 h-4" />
-                <span>Propostas Semanais</span>
+                <span>Base de Duas Semanas</span>
               </button>
 
               <button
@@ -543,6 +619,32 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
               >
                 <Calendar className="w-4 h-4" />
                 <span>Visitas ({currentVisits.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTypeChange('relatorios')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                  importType === 'relatorios'
+                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-md'
+                    : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Relatórios Diários</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTypeChange('analisecritica')}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all ${
+                  importType === 'analisecritica'
+                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-md'
+                    : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span>Análise Crítica</span>
               </button>
             </div>
           </div>
@@ -651,6 +753,24 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                           <th className="p-3 font-semibold">Valor (Kz)</th>
                         </>
                       )}
+                      {importType === 'relatorios' && (
+                        <>
+                          <th className="p-3 font-semibold">Data</th>
+                          <th className="p-3 font-semibold">Comercial</th>
+                          <th className="p-3 font-semibold">Resumo</th>
+                          <th className="p-3 font-semibold">Pipeline (Kz)</th>
+                          <th className="p-3 font-semibold">Adjudicações</th>
+                        </>
+                      )}
+                      {importType === 'analisecritica' && (
+                        <>
+                          <th className="p-3 font-semibold">Negócio / Título</th>
+                          <th className="p-3 font-semibold">Cliente</th>
+                          <th className="p-3 font-semibold">Comercial</th>
+                          <th className="p-3 font-semibold">Etapa</th>
+                          <th className="p-3 font-semibold">Valor (Kz)</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
@@ -686,6 +806,37 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
                             <td className="p-3 text-slate-300">{item.comercialNome}</td>
                             <td className="p-3 text-slate-400">{item.data}</td>
                             <td className="p-3 text-emerald-400">{item.resultado}</td>
+                          </>
+                        )}
+                        {importType === 'propostas' && (
+                          <>
+                            <td className="p-3 font-medium text-slate-200">{item.semana}</td>
+                            <td className="p-3 text-slate-300">{item.cliente}</td>
+                            <td className="p-3 text-slate-300">{item.servico}</td>
+                            <td className="p-3 text-slate-400">{item.estadoProposta}</td>
+                            <td className="p-3 text-emerald-400 font-bold">{Number(item.valorProposta).toLocaleString('pt-AO')}</td>
+                          </>
+                        )}
+                        {importType === 'relatorios' && (
+                          <>
+                            <td className="p-3 text-slate-400">{item.data}</td>
+                            <td className="p-3 font-medium text-slate-200">{item.comercialNome}</td>
+                            <td className="p-3 text-slate-300 truncate max-w-[200px]">{item.actividadeEquipa?.[0]?.resumo}</td>
+                            <td className="p-3 text-emerald-400 font-bold">{Number(item.pipelineTotal).toLocaleString('pt-AO')}</td>
+                            <td className="p-3 text-slate-300">{item.adjudicacoesCount}</td>
+                          </>
+                        )}
+                        {importType === 'analisecritica' && (
+                          <>
+                            <td className="p-3 font-medium text-slate-200">{item.titulo}</td>
+                            <td className="p-3 text-slate-300">{item.clienteNome}</td>
+                            <td className="p-3 text-slate-300">{item.comercialNome}</td>
+                            <td className="p-3">
+                              <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                                {item.etapa}
+                              </span>
+                            </td>
+                            <td className="p-3 font-bold text-emerald-400">{Number(item.valor || 0).toLocaleString('pt-AO')} Kz</td>
                           </>
                         )}
                       </tr>

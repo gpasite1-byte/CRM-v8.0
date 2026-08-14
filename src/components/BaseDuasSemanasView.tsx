@@ -65,8 +65,8 @@ export default function BaseDuasSemanasView({
     if (isAdmin) return true;
     if (!loggedUser || !loggedUser.nome) return false;
 
-    const userNome = (loggedUser.nome || '').toLowerCase().trim();
-    const gestor = (row?.gestorComercial || '').toLowerCase().trim();
+    const userNome = String(loggedUser.nome || '').toLowerCase().trim();
+    const gestor = String(row?.gestorComercial || '').toLowerCase().trim();
 
     return gestor === userNome || gestor.includes(userNome) || userNome.includes(gestor);
   };
@@ -144,8 +144,8 @@ export default function BaseDuasSemanasView({
   const [newObservacoes, setNewObservacoes] = useState('');
 
   // Helper to normalize week names
-  const normalizeSemana = (sem?: string, dataStr?: string): string => {
-    if (!sem) sem = '';
+  const normalizeSemana = (sem?: string | number, dataStr?: string): string => {
+    sem = String(sem || '');
     if (sem.includes('06') || sem.includes('Anterior') || sem === 'Semana 1') return '06–10 Jul';
     if (sem.includes('13') || sem.includes('Finda') || sem === 'Semana 2') return '13–17 Jul';
     if (sem.includes('20') || sem.includes('21') || sem === 'Semana 3') return '20–25 Jul';
@@ -402,11 +402,11 @@ export default function BaseDuasSemanasView({
       if (!term) return matchesSemana && matchesComercial && matchesEstado;
 
       const matchesSearch =
-        (p.cliente || '').toLowerCase().includes(term) ||
-        (p.gestorComercial || '').toLowerCase().includes(term) ||
-        (p.servico || '').toLowerCase().includes(term) ||
-        (p.estadoProposta || '').toLowerCase().includes(term) ||
-        (p.observacoes || '').toLowerCase().includes(term);
+        String(p.cliente || '').toLowerCase().includes(term) ||
+        String(p.gestorComercial || '').toLowerCase().includes(term) ||
+        String(p.servico || '').toLowerCase().includes(term) ||
+        String(p.estadoProposta || '').toLowerCase().includes(term) ||
+        String(p.observacoes || '').toLowerCase().includes(term);
 
       return matchesSemana && matchesComercial && matchesEstado && matchesSearch;
     });
