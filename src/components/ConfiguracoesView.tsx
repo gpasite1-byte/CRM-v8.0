@@ -396,18 +396,16 @@ export default function ConfiguracoesView({
         </div>
       </div>
 
-      {/* Admin Exclusive: Bulk Excel Import & Data Synchronization */}
-      {isAdmin && (
-        <ExcelImportManager
-          comerciais={comerciais}
-          loggedUser={loggedUser}
-          onImportPropostas={onImportPropostas}
-          onImportClientes={onImportClientes}
-          onImportVisitas={onImportVisitas}
-          onImportDeals={onImportDeals}
-          onLogOperation={onLogOperation}
-        />
-      )}
+      {/* Bulk Excel Import & Data Synchronization */}
+      <ExcelImportManager
+        comerciais={comerciais}
+        loggedUser={loggedUser}
+        onImportPropostas={onImportPropostas}
+        onImportClientes={onImportClientes}
+        onImportVisitas={onImportVisitas}
+        onImportDeals={onImportDeals}
+        onLogOperation={onLogOperation}
+      />
 
       {/* Backup & Importador Completo JSON (Vercel & GitHub Migration) */}
       {isAdmin && (
