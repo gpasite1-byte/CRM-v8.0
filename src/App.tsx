@@ -1807,8 +1807,25 @@ export default function App() {
     );
   };
 
-  const handleImportRelatorios = (newRelatorios: RelatorioDiario[]) => {
-    setRelatoriosDiarios(prev => [...newRelatorios, ...prev]);
+  const handleImportRelatorios = (newRelatorios: any[]) => {
+    const novos: RelatorioDiario[] = newRelatorios.map((row, idx) => ({
+      id: Date.now().toString() + idx,
+      data: row.dataEnvio || new Date().toISOString().split('T')[0],
+      semana: row.semana || 'Semana Atual',
+      comercialNome: row.comercial || 'Comercial',
+      actividadeEquipa: [{ comercialNome: row.comercial || 'Comercial', resumo: row.resumo || 'Importado via Excel' }],
+      pipelineTotal: typeof row.totalPipeline === 'number' ? row.totalPipeline : 0,
+      pipelineDestaques: [],
+      visitasRealizadas: [],
+      propostasEmitidasCount: 0,
+      propostasEmitidasValorTotal: 0,
+      propostasEmitidasDestaques: [],
+      adjudicacoesCount: typeof row.valorAdjudicacoes === 'number' ? row.valorAdjudicacoes : 0,
+      cobrancasEfectuadas: '0',
+      criadoEm: new Date().toISOString()
+    }));
+    
+    setRelatoriosDiarios(prev => [...novos, ...prev]);
     addNotification(
       'Relatórios Importados 📝',
       `${newRelatorios.length} relatórios foram carregados no sistema.`,
@@ -1816,7 +1833,7 @@ export default function App() {
     );
   };
 
-  const handleImportAnaliseCritica = (newDeals: Deal[]) => {
+  const handleImportAnaliseCritica = (newDeals: any[]) => {
     setDeals(prev => [...newDeals, ...prev]);
     addNotification(
       'Análise Crítica Atualizada 📈',
