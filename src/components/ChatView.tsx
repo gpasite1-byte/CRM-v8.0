@@ -1927,7 +1927,8 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
               <Send size={14} />
             </button>
           </form>
-        </div>
+        )}
+      </div>
 
       </div>
 
