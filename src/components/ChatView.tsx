@@ -513,19 +513,49 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
       const lStream = localStreamState || mediaStreamRef.current;
 
       if (rStream) {
-        if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== rStream) {
-          remoteVideoRef.current.srcObject = rStream;
-          remoteVideoRef.current.play().catch(() => {});
-        }
-        if (remoteAudioRef.current && remoteAudioRef.current.srcObject !== rStream) {
-          remoteAudioRef.current.srcObject = rStream;
-          remoteAudioRef.current.play().catch(() => {});
+        // Guarantee all remote audio tracks remain enabled
+        rStream.getAudioTracks().forEach(track => {
+          track.enabled = true;
+        });
+
+        if (activeCall.type === 'video') {
+          // For Video Calls: <video> element outputs both Video + Audio
+          if (remoteVideoRef.current) {
+            if (remoteVideoRef.current.srcObject !== rStream) {
+              remoteVideoRef.current.srcObject = rStream;
+            }
+            remoteVideoRef.current.muted = false; // Must be unmuted to hear remote audio!
+            remoteVideoRef.current.play().catch(err => console.warn('Remote video playback note:', err));
+          }
+          // Clear <audio> element to avoid dual audio stream collision/blocking in Chrome/Safari
+          if (remoteAudioRef.current && remoteAudioRef.current.srcObject) {
+            remoteAudioRef.current.srcObject = null;
+          }
+        } else {
+          // For Audio Calls: <audio> element outputs Audio
+          if (remoteAudioRef.current) {
+            if (remoteAudioRef.current.srcObject !== rStream) {
+              remoteAudioRef.current.srcObject = rStream;
+            }
+            remoteAudioRef.current.muted = false;
+            remoteAudioRef.current.play().catch(err => console.warn('Remote audio playback note:', err));
+          }
         }
       }
 
-      if (lStream && localVideoRef.current && localVideoRef.current.srcObject !== lStream) {
-        localVideoRef.current.srcObject = lStream;
-        localVideoRef.current.play().catch(() => {});
+      if (lStream) {
+        // Enforce local mic state (mute/unmute)
+        lStream.getAudioTracks().forEach(track => {
+          track.enabled = !activeCall.isMuted;
+        });
+
+        if (localVideoRef.current) {
+          if (localVideoRef.current.srcObject !== lStream) {
+            localVideoRef.current.srcObject = lStream;
+          }
+          localVideoRef.current.muted = true; // Local preview MUST be muted to prevent mic echo!
+          localVideoRef.current.play().catch(() => {});
+        }
       }
     };
 
