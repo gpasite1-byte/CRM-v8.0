@@ -11,12 +11,17 @@ import * as XLSXModule from "xlsx";
 import PusherServer from "pusher";
 import * as Ably from "ably";
 import multer from "multer";
+import { createClient } from "@supabase/supabase-js";
 
 const upload = multer({ dest: 'uploads/' });
 
 const XLSX: any = (XLSXModule as any).default || XLSXModule;
 
 dotenv.config();
+
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://cwojfqzmcjraxdxodbdg.supabase.co';
+const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_-09xQP6TNwAOV0dD55K7Rg_GxHzH_rf';
+const supabaseServer = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -736,6 +741,32 @@ app.get("/api/dump-excel", (req, res) => {
 
 
 
+// GET CRM data (fetches from Supabase Cloud if available, otherwise local file)
+app.get("/api/crm-data", async (req, res) => {
+  try {
+    let cloudData: any = null;
+    try {
+      const { data, error } = await supabaseServer
+        .from('crm_data')
+        .select('payload')
+        .eq('id', 'gpa_angola_main_db')
+        .single();
+      if (!error && data?.payload) {
+        cloudData = data.payload;
+      }
+    } catch (e) {}
+
+    const localData = getCrmData();
+
+    if (cloudData && (cloudData.deals?.length || cloudData.clients?.length)) {
+      return res.json(cloudData);
+    }
+    return res.json(localData);
+  } catch (error: any) {
+    return res.status(500).json({ error: "Failed to load CRM data from server." });
+  }
+});
+
 // POST update CRM data
 app.post("/api/crm-data", async (req, res) => {
   try {
@@ -767,22 +798,31 @@ app.post("/api/crm-data", async (req, res) => {
       clients: updatedData.clients || currentData.clients,
       visits: updatedData.visits || currentData.visits,
       deals: updatedData.deals || currentData.deals,
+      baseDuasSemanas: updatedData.baseDuasSemanas || currentData.baseDuasSemanas || [],
       guidelines: updatedData.guidelines || currentData.guidelines,
       notifications: updatedData.notifications || currentData.notifications,
       activityFeed: updatedData.activityFeed || currentData.activityFeed,
       arquivos: mergedArquivos,
+      relatoriosDiarios: updatedData.relatoriosDiarios || currentData.relatoriosDiarios || [],
       historicoSemanas: updatedData.historicoSemanas || currentData.historicoSemanas || [],
       historicoMeses: updatedData.historicoMeses || currentData.historicoMeses || [],
       crmName: updatedData.crmName || currentData.crmName,
       telSede: updatedData.telSede || currentData.telSede
     };
 
-    fs.writeFileSync(CRM_DB_FILE, JSON.stringify(mergedData, null, 2), "utf-8");
+    try {
+      fs.writeFileSync(CRM_DB_FILE, JSON.stringify(mergedData, null, 2), "utf-8");
+    } catch (fsErr) {}
 
-    // Automatically sync to Supabase in background if configured
-    const sbConfig = getSupabaseConfig();
-    if (sbConfig.url && sbConfig.key) {
-      executeSupabaseMigrationAndSync(sbConfig.url, sbConfig.key, mergedData).catch(() => {});
+    // Automatically sync to Supabase database so Vercel lambdas & all clients see updated payload
+    try {
+      await supabaseServer.from('crm_data').upsert({
+        id: 'gpa_angola_main_db',
+        payload: mergedData,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+    } catch (sbErr) {
+      console.warn('Supabase server upsert warning:', sbErr);
     }
 
     res.json({ success: true, data: mergedData });

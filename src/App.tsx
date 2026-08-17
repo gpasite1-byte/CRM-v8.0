@@ -665,9 +665,36 @@ export default function App() {
             return self ? { ...prev, ...self } : prev;
           });
         }
-        if (dataToUse.clients && dataToUse.clients.length > 0) setClients(dataToUse.clients);
-        if (dataToUse.visits && dataToUse.visits.length > 0) setVisits(dataToUse.visits);
-        if (dataToUse.deals && dataToUse.deals.length > 0) setDeals(dataToUse.deals);
+        if (dataToUse.clients && dataToUse.clients.length > 0) {
+          setClients(prev => {
+            const merged = [...prev];
+            dataToUse.clients.forEach((c: Cliente) => {
+              if (c && c.id && !merged.some(m => m.id === c.id)) merged.push(c);
+            });
+            saveToLocalStorage('gpa_clients', merged);
+            return merged;
+          });
+        }
+        if (dataToUse.visits && dataToUse.visits.length > 0) {
+          setVisits(prev => {
+            const merged = [...prev];
+            dataToUse.visits.forEach((v: Visita) => {
+              if (v && v.id && !merged.some(m => m.id === v.id)) merged.push(v);
+            });
+            saveToLocalStorage('gpa_visits', merged);
+            return merged;
+          });
+        }
+        if (dataToUse.deals && dataToUse.deals.length > 0) {
+          setDeals(prev => {
+            const merged = [...prev];
+            dataToUse.deals.forEach((d: Deal) => {
+              if (d && d.id && !merged.some(m => m.id === d.id)) merged.push(d);
+            });
+            saveToLocalStorage('gpa_deals', merged);
+            return merged;
+          });
+        }
         if (dataToUse.guidelines && dataToUse.guidelines.length > 0) setGuidelines(dataToUse.guidelines);
         if (dataToUse.notifications && dataToUse.notifications.length > 0) setNotifications(dataToUse.notifications);
         if (dataToUse.activityFeed && dataToUse.activityFeed.length > 0) setActivityFeed(dataToUse.activityFeed);
@@ -709,9 +736,36 @@ export default function App() {
               return self ? { ...prev, ...self } : prev;
             });
           }
-          if (firestoreData.clients) setClients(firestoreData.clients);
-          if (firestoreData.visits) setVisits(firestoreData.visits);
-          if (firestoreData.deals) setDeals(firestoreData.deals);
+          if (firestoreData.clients && firestoreData.clients.length > 0) {
+            setClients(prev => {
+              const merged = [...prev];
+              firestoreData.clients.forEach((c: Cliente) => {
+                if (c && c.id && !merged.some(m => m.id === c.id)) merged.push(c);
+              });
+              saveToLocalStorage('gpa_clients', merged);
+              return merged;
+            });
+          }
+          if (firestoreData.visits && firestoreData.visits.length > 0) {
+            setVisits(prev => {
+              const merged = [...prev];
+              firestoreData.visits.forEach((v: Visita) => {
+                if (v && v.id && !merged.some(m => m.id === v.id)) merged.push(v);
+              });
+              saveToLocalStorage('gpa_visits', merged);
+              return merged;
+            });
+          }
+          if (firestoreData.deals && firestoreData.deals.length > 0) {
+            setDeals(prev => {
+              const merged = [...prev];
+              firestoreData.deals.forEach((d: Deal) => {
+                if (d && d.id && !merged.some(m => m.id === d.id)) merged.push(d);
+              });
+              saveToLocalStorage('gpa_deals', merged);
+              return merged;
+            });
+          }
           if (firestoreData.guidelines) setGuidelines(firestoreData.guidelines);
           if (firestoreData.notifications) setNotifications(firestoreData.notifications);
           if (firestoreData.activityFeed) setActivityFeed(firestoreData.activityFeed);
@@ -762,9 +816,36 @@ export default function App() {
             }
             updateLastSavedPayloadRef(data);
             if (data.comerciais && data.comerciais.length > 0) setComerciais(mergeWithInitialComerciais(data.comerciais));
-            if (data.clients) setClients(data.clients);
-            if (data.visits) setVisits(data.visits);
-            if (data.deals) setDeals(data.deals);
+            if (data.clients && data.clients.length > 0) {
+              setClients(prev => {
+                const merged = [...prev];
+                data.clients.forEach((c: Cliente) => {
+                  if (c && c.id && !merged.some(m => m.id === c.id)) merged.push(c);
+                });
+                saveToLocalStorage('gpa_clients', merged);
+                return merged;
+              });
+            }
+            if (data.visits && data.visits.length > 0) {
+              setVisits(prev => {
+                const merged = [...prev];
+                data.visits.forEach((v: Visita) => {
+                  if (v && v.id && !merged.some(m => m.id === v.id)) merged.push(v);
+                });
+                saveToLocalStorage('gpa_visits', merged);
+                return merged;
+              });
+            }
+            if (data.deals && data.deals.length > 0) {
+              setDeals(prev => {
+                const merged = [...prev];
+                data.deals.forEach((d: Deal) => {
+                  if (d && d.id && !merged.some(m => m.id === d.id)) merged.push(d);
+                });
+                saveToLocalStorage('gpa_deals', merged);
+                return merged;
+              });
+            }
             if (data.guidelines) setGuidelines(data.guidelines);
             if (data.notifications) setNotifications(data.notifications);
             if (data.activityFeed) setActivityFeed(data.activityFeed);
