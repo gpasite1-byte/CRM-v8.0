@@ -3513,32 +3513,32 @@ export default function App() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label>
-                <input type="text" name="nome" defaultValue={selectedUserForEdit.nome} required className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none" />
+                <label className="text-[10px] font-bold text-gray-700 uppercase">Nome Completo</label>
+                <input type="text" name="nome" defaultValue={selectedUserForEdit.nome} required className="text-xs font-bold text-slate-900 bg-white border border-gray-400 rounded-lg p-2.5 focus:outline-none focus:border-blue-600" />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase">Email Corporativo</label>
-                <input type="email" name="email" defaultValue={selectedUserForEdit.email} required className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none" />
+                <label className="text-[10px] font-bold text-gray-700 uppercase">Email Corporativo</label>
+                <input type="email" name="email" defaultValue={selectedUserForEdit.email} required className="text-xs font-bold text-slate-900 bg-white border border-gray-400 rounded-lg p-2.5 focus:outline-none focus:border-blue-600" />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase">Palavra-passe / Senha</label>
-                <input type="text" name="senha" placeholder="Palavra-passe da conta" defaultValue={selectedUserForEdit.senha || 'gpa2026'} required className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none" />
+                <label className="text-[10px] font-bold text-gray-700 uppercase">Palavra-passe / Senha</label>
+                <input type="text" name="senha" placeholder="Palavra-passe da conta" defaultValue={selectedUserForEdit.senha || 'gpa2026'} required className="text-xs font-bold text-slate-900 bg-white border border-gray-400 rounded-lg p-2.5 focus:outline-none focus:border-blue-600 font-mono" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Perfil</label>
-                  <select name="perfil" defaultValue={selectedUserForEdit.perfil} className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none font-semibold">
+                  <label className="text-[10px] font-bold text-gray-700 uppercase">Perfil</label>
+                  <select name="perfil" defaultValue={selectedUserForEdit.perfil} className="text-xs font-extrabold text-slate-900 bg-white border border-gray-400 rounded-lg p-2.5 focus:outline-none focus:border-blue-600">
                     <option value="comercial">Comercial</option>
                     <option value="supervisor">Supervisor</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Função / Cargo</label>
-                  <input type="text" name="funcao" defaultValue={selectedUserForEdit.funcao} required className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-2.5 focus:outline-none" />
+                  <label className="text-[10px] font-bold text-gray-700 uppercase">Função / Cargo</label>
+                  <input type="text" name="funcao" defaultValue={selectedUserForEdit.funcao} required className="text-xs font-bold text-slate-900 bg-white border border-gray-400 rounded-lg p-2.5 focus:outline-none focus:border-blue-600" />
                 </div>
               </div>
 

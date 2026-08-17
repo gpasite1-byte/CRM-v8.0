@@ -770,24 +770,24 @@ export default function ConfiguracoesView({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-gray-600 uppercase">Nome Completo</label>
+              <label className="text-xs font-bold text-gray-800 uppercase tracking-wide">Nome Completo</label>
               <input
                 type="text"
                 value={profileNome}
                 onChange={(e) => setProfileNome(e.target.value)}
                 placeholder="Introduza o seu nome"
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-400 text-xs font-bold text-slate-900 bg-white placeholder:text-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-gray-600 uppercase">Alterar Palavra-passe</label>
+              <label className="text-xs font-bold text-gray-800 uppercase tracking-wide">Alterar Palavra-passe</label>
               <input
-                type="password"
+                type="text"
                 placeholder="Ex: nova_passe123"
                 value={profileSenha}
                 onChange={(e) => setProfileSenha(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-400 text-xs font-bold text-slate-900 bg-white placeholder:text-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
               />
             </div>
           </div>
