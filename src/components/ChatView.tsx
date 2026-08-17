@@ -506,7 +506,9 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
   // Ensure Media Streams (audio/video) stay attached to HTML elements on mobile and desktop
   useEffect(() => {
-    if (activeCall) {
+    if (!activeCall) return;
+
+    const attachStreams = () => {
       const rStream = remoteStreamState || remoteStreamRef.current;
       const lStream = localStreamState || mediaStreamRef.current;
 
@@ -525,7 +527,11 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
         localVideoRef.current.srcObject = lStream;
         localVideoRef.current.play().catch(() => {});
       }
-    }
+    };
+
+    attachStreams();
+    const interval = setInterval(attachStreams, 1000);
+    return () => clearInterval(interval);
   }, [activeCall, remoteStreamState, localStreamState]);
   const callTimerRef = useRef<any>(null);
   const ringStopRef = useRef<(() => void) | null>(null);

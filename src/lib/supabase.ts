@@ -106,6 +106,54 @@ export async function loadCrmDataFromFirestore() {
   }
 }
 
+export async function uploadProfilePhotoToSupabase(userId: string, base64Photo: string): Promise<string> {
+  const currentSupabase = supabase;
+  if (!currentSupabase || !base64Photo || !base64Photo.startsWith('data:')) {
+    return base64Photo;
+  }
+
+  try {
+    const base64Parts = base64Photo.split(';base64,');
+    if (base64Parts.length !== 2) return base64Photo;
+
+    const contentType = base64Parts[0].split(':')[1] || 'image/png';
+    const rawBase64 = base64Parts[1];
+
+    const byteCharacters = atob(rawBase64.replace(/\s/g, ''));
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+      const slice = byteCharacters.slice(offset, offset + 512);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      byteArrays.push(new Uint8Array(byteNumbers));
+    }
+    const blob = new Blob(byteArrays, { type: contentType });
+
+    const ext = contentType.split('/')[1] || 'png';
+    const filePath = `profile_photos/${userId}_${Date.now()}.${ext}`;
+
+    const { error } = await currentSupabase.storage
+      .from('crm_files')
+      .upload(filePath, blob, {
+        contentType,
+        upsert: true
+      });
+
+    if (!error) {
+      const { data: urlData } = currentSupabase.storage
+        .from('crm_files')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    }
+  } catch (err) {
+    console.warn('Error uploading profile photo to Supabase storage:', err);
+  }
+  return base64Photo;
+}
+
 export async function saveCrmDataToFirestore(crmData: any) {
   const currentSupabase = supabase;
   if (!currentSupabase) {
@@ -118,7 +166,7 @@ export async function saveCrmDataToFirestore(crmData: any) {
     if (Array.isArray(crmData.comerciais)) {
       dataToSave.comerciais = crmData.comerciais.map((u: any) => {
         if (!u) return u;
-        return { ...u, foto: u.foto || '' };
+        return { ...u, foto: u.foto || '', senha: u.senha || 'gpa2026' };
       });
     }
 

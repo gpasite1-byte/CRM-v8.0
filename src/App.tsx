@@ -62,7 +62,8 @@ import {
   saveFileToFirestore, 
   deleteFileFromFirestore, 
   isSupabaseConfigured, 
-  configureSupabaseRuntime 
+  configureSupabaseRuntime,
+  uploadProfilePhotoToSupabase 
 } from './lib/supabase';
 import { dispatchRoleNotification } from './lib/notifications';
 import { sanitizeAndDeduplicateUsers, mergeWithInitialComerciais } from './lib/userUtils';
@@ -2151,17 +2152,23 @@ export default function App() {
     }).catch(err => console.warn('Error saving updated profile to server API:', err));
   };
 
-  const handleUpdateUserPhoto = (userId: string, photoBase64: string) => {
+  const handleUpdateUserPhoto = async (userId: string, photoBase64: string) => {
     lastMutatedTimeRef.current = Date.now();
+
+    let finalPhotoUrl = photoBase64;
+    if (photoBase64 && photoBase64.startsWith('data:')) {
+      finalPhotoUrl = await uploadProfilePhotoToSupabase(userId, photoBase64);
+    }
+
     if (loggedUser && loggedUser.id === userId) {
-      const updatedLogged = { ...loggedUser, foto: photoBase64 };
+      const updatedLogged = { ...loggedUser, foto: finalPhotoUrl };
       setLoggedUser(updatedLogged);
       saveToLocalStorage('gpa_logged_user', updatedLogged);
     }
 
     const updatedComerciais = comerciais.map(u => {
       if (u.id === userId) {
-        return { ...u, foto: photoBase64 };
+        return { ...u, foto: finalPhotoUrl };
       }
       return u;
     });
