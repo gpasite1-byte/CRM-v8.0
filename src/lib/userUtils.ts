@@ -21,14 +21,11 @@ export function sanitizeAndDeduplicateUsers(list: Usuario[] = []): Usuario[] {
     const id = (u.id || '').trim();
 
     // Remove any duplicate/excess admin accounts that are not official
-    if ((nome === 'admin' || nome === 'administrador') && email !== 'admin@gpaangola.co.ao') {
-      continue;
-    }
-    if (nome.startsWith('admin') && !['admin', 'admin1', 'admin2'].includes(nome) && email !== 'david.neto@gpaangola.co.ao') {
+    if ((nome === 'admin' || nome === 'administrador') && email !== 'admin@gpaangola.co.ao' && email !== 'admin') {
       continue;
     }
 
-    if ((id && seenIds.has(id)) || (email && seenEmails.has(email)) || (nome && seenNames.has(nome))) {
+    if ((id && seenIds.has(id)) || (email && seenEmails.has(email))) {
       continue;
     }
 
@@ -36,23 +33,23 @@ export function sanitizeAndDeduplicateUsers(list: Usuario[] = []): Usuario[] {
     if (email) seenEmails.add(email);
     if (nome) seenNames.add(nome);
 
-    // Deep preservation: match with initial seed for missing metadata but NEVER overwrite custom photo/password
+    // Deep preservation: match with initial seed by ID or Email (never strictly by old name)
     const seedMatch = initialComerciais.find(initU => 
-      initU.id === u.id || 
-      initU.email.toLowerCase().trim() === email || 
-      initU.nome.toLowerCase().trim() === nome
+      (id && initU.id === id) || 
+      (email && initU.email.toLowerCase().trim() === email)
     );
 
     const preservedUser: Usuario = {
       ...(seedMatch || {}),
       ...u,
-      // Guarantee custom photo and password are strictly preserved
-      foto: u.foto !== undefined && u.foto !== null ? u.foto : (seedMatch?.foto || ''),
-      senha: u.senha ? u.senha : (seedMatch?.senha || 'gpa2026'),
-      telefone: u.telefone || seedMatch?.telefone || '922000000',
-      whatsappNumero: u.whatsappNumero || seedMatch?.whatsappNumero || u.telefone || '922000000',
+      // User or admin explicit edits take absolute precedence over seed values
+      nome: u.nome || seedMatch?.nome || 'Utilizador',
+      senha: u.senha !== undefined && u.senha !== '' ? u.senha : (seedMatch?.senha || 'gpa2026'),
       perfil: u.perfil || seedMatch?.perfil || 'comercial',
       funcao: u.funcao || seedMatch?.funcao || 'Comercial',
+      foto: u.foto !== undefined && u.foto !== null ? u.foto : (seedMatch?.foto || ''),
+      telefone: u.telefone || seedMatch?.telefone || '922000000',
+      whatsappNumero: u.whatsappNumero || seedMatch?.whatsappNumero || u.telefone || '922000000',
       status: u.status || seedMatch?.status || 'ativo',
       metaSemanal: u.metaSemanal !== undefined ? u.metaSemanal : (seedMatch?.metaSemanal || 3750000),
       metaMensal: u.metaMensal !== undefined ? u.metaMensal : (seedMatch?.metaMensal || 15000000)
@@ -64,12 +61,10 @@ export function sanitizeAndDeduplicateUsers(list: Usuario[] = []): Usuario[] {
   // Ensure official initial seed accounts exist if never registered
   for (const initU of initialComerciais) {
     const eKey = initU.email.toLowerCase().trim();
-    const nKey = initU.nome.toLowerCase().trim();
     const iKey = initU.id.trim();
 
-    if (!seenEmails.has(eKey) && !seenNames.has(nKey) && !seenIds.has(iKey)) {
+    if (!seenEmails.has(eKey) && !seenIds.has(iKey)) {
       seenEmails.add(eKey);
-      seenNames.add(nKey);
       if (iKey) seenIds.add(iKey);
       result.push(initU);
     }
@@ -81,3 +76,4 @@ export function sanitizeAndDeduplicateUsers(list: Usuario[] = []): Usuario[] {
 export function mergeWithInitialComerciais(incoming: Usuario[] = []): Usuario[] {
   return sanitizeAndDeduplicateUsers(incoming);
 }
+

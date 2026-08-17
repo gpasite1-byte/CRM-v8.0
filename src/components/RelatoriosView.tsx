@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { Deal, Usuario, RelatorioDiario, HistoricoSemanal, HistoricoMensal } from '../types';
 import {
   FileText, Printer, Download, Filter, Cloud, CheckCircle, AlertCircle,
   FileSpreadsheet, Calendar, Plus, Save, Clock, RefreshCw, BarChart2,
-  Users, Check, ChevronRight, Layers, Award
+  Users, Check, ChevronRight, Layers, Award, CheckCircle2, XCircle
 } from 'lucide-react';
 import { getCurrentMonthLabel, getCurrentWeeks } from '../utils/weekUtils';
 
@@ -36,8 +37,14 @@ export default function RelatoriosView({
   onGerarMensal,
   onExportCSV
 }: RelatoriosViewProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'diario' | 'semanal' | 'mensal' | 'comparativo' | 'executivo'>('diario');
+  const [activeSubTab, setActiveSubTab] = useState<'diario' | 'semanal' | 'mensal' | 'comparativo' | 'executivo' | 'actividades'>('diario');
   const [selectedCom, setSelectedCom] = useState('Todos');
+  
+  // State for Activity Report (Actividades Feitas e Não Feitas)
+  const [actFiltroPeriodo, setActFiltroPeriodo] = useState<'todos' | 'diario' | 'semanal' | 'mensal' | 'trimestral' | 'anual'>('todos');
+  const [actFiltroEstado, setActFiltroEstado] = useState<'todas' | 'feitas' | 'nao_feitas'>('todas');
+  const [actFiltroComercial, setActFiltroComercial] = useState<string>('todos');
+
   const defaultWeekIds = historicoSemanas.slice(-4).map(s => s.id);
   const [selectedSemanaComp1, setSelectedSemanaComp1] = useState(defaultWeekIds[0] || historicoSemanas[0]?.id || '');
   const [selectedSemanaComp2, setSelectedSemanaComp2] = useState(defaultWeekIds[1] || historicoSemanas[1]?.id || '');
@@ -517,6 +524,17 @@ export default function RelatoriosView({
             }`}
           >
             <Users size={14} /> Listagem CRM & Propostas
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('actividades')}
+            className={`px-3 py-1.5 rounded-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+              activeSubTab === 'actividades'
+                ? 'bg-amber-400 text-gray-950 font-black shadow-xs'
+                : 'bg-[#122442] text-white/80 hover:text-white'
+            }`}
+          >
+            <CheckCircle2 size={14} /> Relatório de Actividades (Feitas / Não Feitas)
           </button>
         </div>
       </div>
@@ -1652,6 +1670,381 @@ export default function RelatoriosView({
           </div>
         </div>
       )}
+
+      {/* TAB 6: RELATÓRIO DE ACTIVIDADES (FEITAS E NÃO FEITAS) - DIÁRIO, SEMANAL, MENSAL, TRIMESTRAL, ANUAL */}
+      {activeSubTab === 'actividades' && (() => {
+        // Compile all activities from deals, visits & daily reports
+        const compiledActivities: Array<{
+          id: string;
+          data: string;
+          tipo: string;
+          cliente: string;
+          gestor: string;
+          gestorId: string;
+          descricao: string;
+          estadoLabel: string;
+          isFeita: boolean;
+          valor: number;
+          observacoes?: string;
+        }> = [];
+
+        // 1. Deals
+        deals.forEach(d => {
+          const isDone = d.etapa === 'fechado' || d.etapa === 'producao';
+          const isLost = d.etapa === 'perdido';
+          compiledActivities.push({
+            id: d.id,
+            data: d.dataEnvio || d.semana || '2026-08-10',
+            tipo: 'Proposta Comercial',
+            cliente: d.clienteNome,
+            gestor: d.comercialNome || 'Comercial',
+            gestorId: d.comercialId,
+            descricao: d.titulo || `Proposta Comercial ${d.clienteNome}`,
+            estadoLabel: isDone ? 'FEITA (Concluída)' : (isLost ? 'NÃO FEITA (Perdida)' : 'NÃO FEITA (Pendente)'),
+            isFeita: isDone,
+            valor: d.valor || 0,
+            observacoes: d.observacoes || `Etapa: ${d.etapa.toUpperCase()}`
+          });
+        });
+
+        // 2. Daily team logs
+        relatoriosDiarios.forEach(rd => {
+          (rd.actividadeEquipa || []).forEach((act, idx) => {
+            if (act.resumo && act.resumo.trim() !== '') {
+              compiledActivities.push({
+                id: `act_rd_${rd.id}_${idx}`,
+                data: rd.data,
+                tipo: 'Relatório Diário',
+                cliente: 'Interno GPA',
+                gestor: act.comercialNome,
+                gestorId: act.comercialNome,
+                descricao: act.resumo,
+                estadoLabel: 'FEITA (Concluída)',
+                isFeita: true,
+                valor: 0,
+                observacoes: `Registo de atividade diária (${rd.semana})`
+              });
+            }
+          });
+        });
+
+        // Apply Filters
+        const filteredActivities = compiledActivities.filter(a => {
+          // Comercial filter
+          if (actFiltroComercial !== 'todos') {
+            const matchesCom = (a.gestorId === actFiltroComercial) || 
+              (a.gestor.toLowerCase().includes(actFiltroComercial.toLowerCase()));
+            if (!matchesCom) return false;
+          }
+
+          // State filter
+          if (actFiltroEstado === 'feitas' && !a.isFeita) return false;
+          if (actFiltroEstado === 'nao_feitas' && a.isFeita) return false;
+
+          // Date / Period filter
+          if (actFiltroPeriodo !== 'todos') {
+            const actDate = new Date(a.data);
+            const now = new Date();
+            if (actFiltroPeriodo === 'diario') {
+              const todayStr = now.toISOString().split('T')[0];
+              if (a.data !== todayStr) return false;
+            } else if (actFiltroPeriodo === 'semanal') {
+              const diffDays = Math.abs((now.getTime() - actDate.getTime()) / (1000 * 3600 * 24));
+              if (diffDays > 7) return false;
+            } else if (actFiltroPeriodo === 'mensal') {
+              if (actDate.getMonth() !== now.getMonth() || actDate.getFullYear() !== now.getFullYear()) return false;
+            } else if (actFiltroPeriodo === 'trimestral') {
+              const currentQuarter = Math.floor(now.getMonth() / 3);
+              const actQuarter = Math.floor(actDate.getMonth() / 3);
+              if (currentQuarter !== actQuarter || actDate.getFullYear() !== now.getFullYear()) return false;
+            } else if (actFiltroPeriodo === 'anual') {
+              if (actDate.getFullYear() !== now.getFullYear()) return false;
+            }
+          }
+
+          return true;
+        });
+
+        const totalFeitas = filteredActivities.filter(a => a.isFeita).length;
+        const totalNaoFeitas = filteredActivities.filter(a => !a.isFeita).length;
+        const totalVolume = filteredActivities.reduce((sum, a) => sum + (a.valor || 0), 0);
+        const taxaConclusao = filteredActivities.length > 0 
+          ? ((totalFeitas / filteredActivities.length) * 100).toFixed(1) + '%'
+          : '0%';
+
+        const handleExportActividadesExcel = () => {
+          try {
+            const excelRows = filteredActivities.map(a => ({
+              "Data / Período": a.data,
+              "Tipo de Actividade": a.tipo,
+              "Cliente / Empresa": a.cliente,
+              "Gestor Comercial": a.gestor,
+              "Descrição / Título": a.descricao,
+              "Estado": a.estadoLabel,
+              "Valor Financeiro (Kz)": a.valor ? a.valor : '—',
+              "Observações": a.observacoes || ''
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(excelRows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Actividades CRM");
+            XLSX.writeFile(wb, `Relatorio_Actividades_GPA_CRM_${actFiltroPeriodo}_${new Date().toISOString().split('T')[0]}.xlsx`);
+          } catch (e) {
+            alert('Erro ao exportar relatório em Excel.');
+          }
+        };
+
+        const handleExportActividadesPDF = () => {
+          const printWin = window.open('', '_blank');
+          if (!printWin) return;
+
+          const rowsHtml = filteredActivities.map(a => `
+            <tr>
+              <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${a.data}</td>
+              <td style="padding:8px;border:1px solid #ddd;">${a.tipo}</td>
+              <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${a.cliente}</td>
+              <td style="padding:8px;border:1px solid #ddd;">${a.gestor}</td>
+              <td style="padding:8px;border:1px solid #ddd;">${a.descricao}</td>
+              <td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold;color:${a.isFeita ? '#15803d' : '#b91c1c'};">${a.estadoLabel}</td>
+              <td style="padding:8px;border:1px solid #ddd;text-align:right;font-weight:bold;">${a.valor ? new Intl.NumberFormat('pt-AO').format(a.valor) + ' Kz' : '—'}</td>
+            </tr>
+          `).join('');
+
+          const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>Relatório Oficial de Actividades - GPA Angola CRM</title>
+              <style>
+                body { font-family: 'Helvetica', 'Arial', sans-serif; padding: 25px; color: #1e293b; line-height: 1.4; }
+                .header { border-bottom: 3px solid #1B365D; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+                .title { font-size: 20px; font-weight: 900; color: #1B365D; text-transform: uppercase; margin: 0; }
+                .subtitle { font-size: 11px; color: #64748b; margin-top: 4px; }
+                .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
+                .kpi-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; text-align: center; }
+                .kpi-num { font-size: 18px; font-weight: 900; color: #1B365D; }
+                .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #475569; }
+                table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+                th { background-color: #1B365D; color: white; padding: 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
+                tr:nth-child(even) { background-color: #f1f5f9; }
+                .footer { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 10px; color: #94a3b8; text-align: center; }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <div>
+                  <h1 class="title">RELATÓRIO DE ACTIVIDADES COMPILADAS (FEITAS E NÃO FEITAS)</h1>
+                  <div class="subtitle">GPA ANGOLA CRM • Gerado em ${new Date().toLocaleString('pt-AO')} • Período: ${actFiltroPeriodo.toUpperCase()} • Estado: ${actFiltroEstado.toUpperCase()}</div>
+                </div>
+              </div>
+
+              <div class="kpi-grid">
+                <div class="kpi-box">
+                  <div class="kpi-label">Total de Actividades</div>
+                  <div class="kpi-num">${filteredActivities.length}</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="kpi-label">Actividades Feitas</div>
+                  <div class="kpi-num" style="color:#166534;">${totalFeitas}</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="kpi-label">Actividades Não Feitas</div>
+                  <div class="kpi-num" style="color:#991b1b;">${totalNaoFeitas}</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="kpi-label">Taxa de Conclusão</div>
+                  <div class="kpi-num" style="color:#854d0e;">${taxaConclusao}</div>
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data / Período</th>
+                    <th>Tipo</th>
+                    <th>Cliente / Empresa</th>
+                    <th>Gestor Comercial</th>
+                    <th>Descrição da Actividade</th>
+                    <th style="text-align:center;">Estado</th>
+                    <th style="text-align:right;">Valor (Kz)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml || '<tr><td colspan="7" style="text-align:center;padding:20px;">Nenhuma atividade registada para os filtros selecionados.</td></tr>'}
+                </tbody>
+              </table>
+
+              <div class="footer">
+                Relatório de Actividades GPA CRM • Documento com Valor Digital e Histórico Permanente • Processado Automaticamente
+              </div>
+
+              <script>window.onload = function() { window.print(); };</script>
+            </body>
+            </html>
+          `;
+
+          printWin.document.write(html);
+          printWin.document.close();
+        };
+
+        return (
+          <div className="space-y-4 font-sans">
+            
+            {/* Filter Bar & Export Buttons */}
+            <div className="bg-white border border-gray-400 p-3 shadow-xs space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={20} className="text-emerald-600" />
+                  <h3 className="text-sm font-black text-[#1B365D] uppercase tracking-wide">
+                    RELATÓRIO DE ACTIVIDADES COMPILADAS (FEITAS E NÃO FEITAS)
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportActividadesPDF}
+                    className="bg-[#1B365D] hover:bg-[#122442] text-white font-bold text-xs px-3.5 py-1.5 rounded-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Printer size={13} /> Exportar PDF
+                  </button>
+
+                  <button
+                    onClick={handleExportActividadesExcel}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <FileSpreadsheet size={13} /> Exportar Excel (.XLSX)
+                  </button>
+                </div>
+              </div>
+
+              {/* Filters grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-600 uppercase">1. Filtrar por Período:</label>
+                  <select
+                    value={actFiltroPeriodo}
+                    onChange={(e) => setActFiltroPeriodo(e.target.value as any)}
+                    className="text-xs font-bold bg-slate-50 border border-gray-300 rounded-xs p-1.5 focus:outline-none"
+                  >
+                    <option value="todos">-- Todos os Períodos --</option>
+                    <option value="diario">Diário (Hoje)</option>
+                    <option value="semanal">Semanal (Últimos 7 dias)</option>
+                    <option value="mensal">Mensal (Mês Atual)</option>
+                    <option value="trimestral">Trimestral (Trimestre Atual)</option>
+                    <option value="anual">Anual (Ano 2026)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-600 uppercase">2. Filtrar por Estado da Actividade:</label>
+                  <select
+                    value={actFiltroEstado}
+                    onChange={(e) => setActFiltroEstado(e.target.value as any)}
+                    className="text-xs font-bold bg-slate-50 border border-gray-300 rounded-xs p-1.5 focus:outline-none"
+                  >
+                    <option value="todas">-- Todas as Actividades --</option>
+                    <option value="feitas">✅ Actividades Feitas / Concluídas</option>
+                    <option value="nao_feitas">⏳ Actividades Não Feitas / Pendentes</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-600 uppercase">3. Gestor Comercial:</label>
+                  <select
+                    value={actFiltroComercial}
+                    onChange={(e) => setActFiltroComercial(e.target.value)}
+                    className="text-xs font-bold bg-slate-50 border border-gray-300 rounded-xs p-1.5 focus:outline-none"
+                  >
+                    <option value="todos">-- Todos os Comerciais --</option>
+                    {comerciais.map(u => (
+                      <option key={u.id} value={u.id}>{u.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="bg-white border border-gray-300 p-3 rounded-xs shadow-2xs text-center">
+                <span className="text-[10px] font-bold text-gray-500 uppercase block">Total de Actividades</span>
+                <strong className="text-xl font-black text-gray-900">{filteredActivities.length}</strong>
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-xs shadow-2xs text-center">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase block">Actividades Feitas</span>
+                <strong className="text-xl font-black text-emerald-900">{totalFeitas}</strong>
+              </div>
+
+              <div className="bg-rose-50 border border-rose-300 p-3 rounded-xs shadow-2xs text-center">
+                <span className="text-[10px] font-bold text-rose-800 uppercase block">Actividades Não Feitas</span>
+                <strong className="text-xl font-black text-rose-900">{totalNaoFeitas}</strong>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-300 p-3 rounded-xs shadow-2xs text-center">
+                <span className="text-[10px] font-bold text-amber-900 uppercase block">Taxa de Conclusão %</span>
+                <strong className="text-xl font-black text-amber-950">{taxaConclusao}</strong>
+              </div>
+            </div>
+
+            {/* Activities Detailed Table */}
+            <div className="bg-white border border-gray-400 shadow-xs overflow-x-auto">
+              <div className="bg-[#122442] text-white px-3 py-1.5 text-xs font-bold uppercase tracking-wide flex items-center justify-between border-b border-[#0b162a]">
+                <span>LISTAGEM DE ACTIVIDADES REGISTADAS ({filteredActivities.length})</span>
+                <span className="text-amber-400 font-mono text-[11px]">Volume Total: {new Intl.NumberFormat('pt-AO').format(totalVolume)} Kz</span>
+              </div>
+              <table className="w-full text-[11px] text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#0B5C80] text-white border-b border-[#084560]">
+                    <th className="px-3 py-2 font-bold border-r border-[#1B7099]">Data / Período</th>
+                    <th className="px-3 py-2 font-bold border-r border-[#1B7099]">Tipo</th>
+                    <th className="px-3 py-2 font-bold border-r border-[#1B7099]">Cliente / Empresa</th>
+                    <th className="px-3 py-2 font-bold border-r border-[#1B7099]">Gestor Comercial</th>
+                    <th className="px-3 py-2 font-bold border-r border-[#1B7099]">Descrição da Actividade</th>
+                    <th className="px-3 py-2 font-bold border-r border-[#1B7099] text-center min-w-[130px]">Estado</th>
+                    <th className="px-3 py-2 font-bold text-right">Valor (Kz)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-300 text-gray-900">
+                  {filteredActivities.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-xs font-semibold text-gray-500 italic">
+                        Nenhuma atividade encontrada para os filtros aplicados.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredActivities.map((act) => (
+                      <tr key={act.id} className="hover:bg-blue-50/50 transition-colors">
+                        <td className="px-3 py-2 border-r border-gray-300 font-bold font-mono">{act.data}</td>
+                        <td className="px-3 py-2 border-r border-gray-300 font-semibold">{act.tipo}</td>
+                        <td className="px-3 py-2 border-r border-gray-300 font-bold text-gray-900">{act.cliente}</td>
+                        <td className="px-3 py-2 border-r border-gray-300 font-medium">{act.gestor}</td>
+                        <td className="px-3 py-2 border-r border-gray-300">
+                          <strong className="text-gray-900 block">{act.descricao}</strong>
+                          {act.observacoes && <span className="text-[10px] text-gray-500 block font-normal">{act.observacoes}</span>}
+                        </td>
+                        <td className="px-3 py-2 border-r border-gray-300 text-center">
+                          <span className={`px-2 py-0.5 rounded-xs text-[9px] font-bold uppercase border ${
+                            act.isFeita 
+                              ? 'bg-emerald-100 text-emerald-950 border-emerald-400'
+                              : 'bg-rose-100 text-rose-950 border-rose-400'
+                          }`}>
+                            {act.estadoLabel}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-emerald-800 font-mono">
+                          {act.valor ? `${new Intl.NumberFormat('pt-AO').format(act.valor)} Kz` : '—'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        );
+      })()}
 
     </div>
   );

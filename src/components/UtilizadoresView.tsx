@@ -174,9 +174,25 @@ export default function UtilizadoresView({
                   </td>
                   <td className="px-3 py-2 border-r border-gray-300 text-gray-800 font-medium">{u.email}</td>
                   <td className="px-3 py-2 border-r border-gray-300 text-center">
-                    <span className="bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded-xs font-bold text-[9px] uppercase tracking-wider font-mono">
-                      {u.perfil}
-                    </span>
+                    {role === 'admin' ? (
+                      <select
+                        value={u.perfil}
+                        onChange={(e) => {
+                          const newRole = e.target.value as any;
+                          onOpenEditUser({ ...u, perfil: newRole });
+                        }}
+                        className="bg-blue-50 text-blue-950 border border-blue-400 font-extrabold text-[10px] uppercase rounded-xs px-1.5 py-0.5 focus:outline-none cursor-pointer"
+                        title="Alterar Nível de Acesso (Administrador / Supervisor / Comercial)"
+                      >
+                        <option value="comercial">Comercial</option>
+                        <option value="supervisor">Gestor / Supervisor</option>
+                        <option value="admin">Administrador Principal</option>
+                      </select>
+                    ) : (
+                      <span className="bg-blue-100 text-blue-900 border border-blue-300 px-2 py-0.5 rounded-xs font-bold text-[9px] uppercase tracking-wider font-mono">
+                        {u.perfil}
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2 border-r border-gray-300 text-gray-800 font-medium">{u.provincia || 'Luanda'}</td>
                   <td className="px-3 py-2 border-r border-gray-300 text-center">

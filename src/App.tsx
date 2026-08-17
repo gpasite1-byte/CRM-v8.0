@@ -1890,41 +1890,64 @@ export default function App() {
     const prov = fd.get('provincia') as string;
     const newPhoto = userModalPhoto !== '' ? userModalPhoto : selectedUserForEdit.foto;
 
-    setComerciais(prev => {
-      return prev.map(u => {
-        if (u.id === selectedUserForEdit.id) {
-          return {
-            ...u,
-            nome: nome || u.nome,
-            email: email || u.email,
-            senha: senha || u.senha,
-            perfil: (perfil as Usuario['perfil']) || u.perfil,
-            funcao: funcao || u.funcao,
-            metaSemanal: meta,
-            metaMensal: meta * 4,
-            provincia: prov || u.provincia,
-            foto: newPhoto
-          };
-        }
-        return u;
-      });
+    lastMutatedTimeRef.current = Date.now();
+    const updatedList = comerciais.map(u => {
+      if (u.id === selectedUserForEdit.id) {
+        return {
+          ...u,
+          nome: nome || u.nome,
+          email: email || u.email,
+          senha: senha || u.senha,
+          perfil: (perfil as Usuario['perfil']) || u.perfil,
+          funcao: funcao || u.funcao,
+          metaSemanal: meta,
+          metaMensal: meta * 4,
+          provincia: prov || u.provincia,
+          foto: newPhoto
+        };
+      }
+      return u;
     });
 
-    setLoggedUser(current => {
-      if (!current || current.id !== selectedUserForEdit.id) return current;
-      return {
-        ...current,
-        nome: nome || current.nome,
-        email: email || current.email,
-        senha: senha || current.senha,
-        perfil: (perfil as Usuario['perfil']) || current.perfil,
-        funcao: funcao || current.funcao,
+    setComerciais(updatedList);
+    saveToLocalStorage('gpa_comerciais', updatedList);
+
+    if (loggedUser && (loggedUser.id === selectedUserForEdit.id || loggedUser.email.toLowerCase() === selectedUserForEdit.email.toLowerCase())) {
+      const updatedLogged = {
+        ...loggedUser,
+        nome: nome || loggedUser.nome,
+        email: email || loggedUser.email,
+        senha: senha || loggedUser.senha,
+        perfil: (perfil as Usuario['perfil']) || loggedUser.perfil,
+        funcao: funcao || loggedUser.funcao,
         metaSemanal: meta,
         metaMensal: meta * 4,
-        provincia: prov || current.provincia,
+        provincia: prov || loggedUser.provincia,
         foto: newPhoto
       };
-    });
+      setLoggedUser(updatedLogged);
+      saveToLocalStorage('gpa_logged_user', updatedLogged);
+    }
+
+    // Immediately persist to server & cloud database
+    const payload = {
+      comerciais: updatedList,
+      clients,
+      visits,
+      deals,
+      guidelines,
+      notifications,
+      activityFeed,
+      arquivos,
+      crmName,
+      telSede
+    };
+    saveCrmDataToFirestore(payload).catch(console.warn);
+    fetch('/api/crm-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(console.warn);
 
     setIsEditUserOpen(false);
     setSelectedUserForEdit(null);
@@ -2904,6 +2927,18 @@ export default function App() {
 
                   localStorage.setItem('gpa_base_duas_semanas', JSON.stringify(updated));
                   window.dispatchEvent(new Event('storage'));
+
+                  // Sync immediately to server database & Supabase cloud so all users see it permanently
+                  const payload = {
+                    comerciais, clients, visits, deals, guidelines, notifications, activityFeed, arquivos, crmName, telSede,
+                    baseDuasSemanas: updated
+                  };
+                  fetch('/api/crm-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                  }).catch(console.error);
+                  saveCrmDataToFirestore(payload).catch(console.error);
                 } catch (e) { console.error(e); }
               }}
               onImportClientes={(newClientes) => {

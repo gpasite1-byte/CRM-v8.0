@@ -135,6 +135,7 @@ export default function ConfiguracoesView({
   useEffect(() => {
     if (loggedUser) {
       setProfileNome(loggedUser.nome);
+      if (loggedUser.senha) setProfileSenha(loggedUser.senha);
       if (loggedUser.preferenciaNotificacao) setPreferenciaNotificacao(loggedUser.preferenciaNotificacao);
       if (loggedUser.whatsappNumero) setWhatsappNumero(loggedUser.whatsappNumero);
       if (loggedUser.telegramChatId) setTelegramChatId(loggedUser.telegramChatId);

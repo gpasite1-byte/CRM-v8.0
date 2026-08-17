@@ -303,6 +303,69 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
   const [peerConnected, setPeerConnected] = useState<boolean>(false);
   const [showCPaaSModal, setShowCPaaSModal] = useState<boolean>(false);
 
+  // Audio Note / Voice Message Recorder State
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<any>(null);
+
+  const startAudioRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Url = reader.result as string;
+          setAttachmentPreview({
+            type: 'file',
+            url: base64Url,
+            name: `Mensagem_de_Audio_${new Date().toLocaleTimeString('pt-PT').replace(/:/g, '-')}.webm`
+          });
+        };
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      mr.start();
+      setIsRecordingAudio(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (e) {
+      alert('Não foi possível aceder ao microfone. Verifique se o microfone está conectado e permitido no seu navegador.');
+    }
+  };
+
+  const stopAudioRecording = () => {
+    if (mediaRecorderRef.current && isRecordingAudio) {
+      mediaRecorderRef.current.stop();
+      setIsRecordingAudio(false);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    }
+  };
+
+  const cancelAudioRecording = () => {
+    if (mediaRecorderRef.current && isRecordingAudio) {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+      setIsRecordingAudio(false);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    }
+  };
+
   // Unified Call Signal Processors to prevent duplicated rings/modal pops
   const processIncomingCallSignal = (sig: any) => {
     if (!sig || !sig.callId) return;
@@ -1691,9 +1754,17 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
                       {msg.text && <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>}
 
                       {msg.attachment && (
-                        <div className="mt-2 rounded-xl overflow-hidden border border-black/10 max-w-sm bg-black/5">
+                        <div className="mt-2 rounded-xl overflow-hidden border border-black/10 max-w-sm bg-black/5 p-1">
                           {msg.attachment.type === 'image' ? (
                             <img src={msg.attachment.url} alt="anexo" className="max-h-60 w-full object-cover rounded-xl" />
+                          ) : (msg.attachment.name?.toLowerCase().includes('audio') || msg.attachment.url?.startsWith('data:audio') || msg.attachment.name?.endsWith('.webm') || msg.attachment.name?.endsWith('.mp3')) ? (
+                            <div className="p-2 space-y-1 bg-white rounded-lg border border-slate-200">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                                <Mic size={15} className="text-emerald-600 animate-pulse" />
+                                <span>Mensagem de Áudio</span>
+                              </div>
+                              <audio controls src={msg.attachment.url} className="w-full h-9 rounded" />
+                            </div>
                           ) : (
                             <div className="p-3 flex items-center gap-2 text-xs font-bold text-slate-700 bg-white">
                               <FileText size={18} className="text-blue-600" />
@@ -1757,41 +1828,76 @@ export default function ChatView({ loggedUser, comerciais, onLogOperation, onAdd
 
         {/* Input Message Footer */}
         <div className="p-4 bg-white border-t border-gray-200 shrink-0">
-          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-              title="Anexar Imagem ou Ficheiro"
-            >
-              <Paperclip size={18} />
-            </button>
-
-            <div className="relative flex-1">
+          {isRecordingAudio ? (
+            <div className="flex items-center justify-between bg-red-50 border border-red-200 p-3 rounded-2xl animate-pulse">
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" />
+                <span className="text-xs font-bold text-red-900 font-mono">
+                  A gravar áudio: {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={cancelAudioRecording}
+                  className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={stopAudioRecording}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1"
+                >
+                  <CheckCircle2 size={14} /> Concluir Áudio
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+              
               <input
-                type="text"
-                placeholder={`Mensagem para #${activeTitle}...`}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                className="w-full bg-slate-100 text-slate-800 text-xs px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                className="hidden"
               />
 
-              {/* Emoji quick popover */}
               <button
                 type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                title="Anexar Imagem ou Ficheiro"
               >
-                <Smile size={18} />
+                <Paperclip size={18} />
               </button>
+
+              <button
+                type="button"
+                onClick={startAudioRecording}
+                className="p-2.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition cursor-pointer"
+                title="Gravar Mensagem de Áudio / Nota de Voz"
+              >
+                <Mic size={18} />
+              </button>
+
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder={`Mensagem para #${activeTitle}...`}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  className="w-full bg-slate-100 text-slate-800 text-xs px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                />
+
+                {/* Emoji quick popover */}
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  <Smile size={18} />
+                </button>
 
               {showEmojiPicker && (
                 <div className="absolute right-0 bottom-12 bg-white border border-gray-200 rounded-2xl shadow-xl p-3 grid grid-cols-6 gap-2 z-50">
